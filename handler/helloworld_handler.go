@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/labstack/echo/v4"
-	"github.com/uma-arai/sbcntr-backend/domain/model"
 )
 
 // HelloWorldHandler ...

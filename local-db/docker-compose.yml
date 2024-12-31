@@ -1,0 +1,11 @@
+services:
+  db:
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: sbcntrapp
+      MYSQL_USER: sbcntrapp
+      MYSQL_PASSWORD: password
+    volumes:
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf

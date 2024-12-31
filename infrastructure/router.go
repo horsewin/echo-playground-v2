@@ -3,10 +3,10 @@ package infrastructure
 import (
 	"os"
 
+	handlers "github.com/horsewin
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
-	handlers "github.com/uma-arai/sbcntr-backend/handler"
 )
 
 // Router ...

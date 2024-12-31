@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/labstack/echo/v4"
-	"github.com/uma-arai/sbcntr-backend/domain/model"
+	"github.com/horsewin/echo-playground-v2/domain/model"
+	
 )
 
 var messageConfig map[string]interface{}

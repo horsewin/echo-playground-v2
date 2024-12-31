@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/uma-arai/sbcntr-backend/infrastructure"
+	"github.com/horsewin/echo-playground-v2/infrastructure"
 )
 
 const (

@@ -1,9 +1,9 @@
 package usecase
 
 import (
-	"github.com/uma-arai/sbcntr-backend/domain/model"
-	"github.com/uma-arai/sbcntr-backend/domain/repository"
-	"github.com/uma-arai/sbcntr-backend/utils"
+	"github.com/horsewin/echo-playground-v2/domain/model"
+	"github.com/horsewin/echo-playground-v2/domain/repository"
+	"github.com/horsewin/echo-playground-v2/utils"
 )
 
 // NotificationInteractor ...

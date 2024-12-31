@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"github.com/uma-arai/sbcntr-backend/domain/model"
-	"github.com/uma-arai/sbcntr-backend/interface/database"
+	"github.com/horsewin/echo-playground-v2/domain/model"
+	"github.com/horsewin/echo-playground-v2/interface/database"
 )
 
 // AppRepositoryInterface ...

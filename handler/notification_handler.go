@@ -3,11 +3,11 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/horsewin/echo-playground-v2/domain/repository"
+	"github.com/horsewin/echo-playground-v2/interface/database"
+	"github.com/horsewin/echo-playground-v2/usecase"
+	"github.com/horsewin/echo-playground-v2/utils"
 	"github.com/labstack/echo/v4"
-	"github.com/uma-arai/sbcntr-backend/domain/repository"
-	"github.com/uma-arai/sbcntr-backend/interface/database"
-	"github.com/uma-arai/sbcntr-backend/usecase"
-	"github.com/uma-arai/sbcntr-backend/utils"
 )
 
 // NotificationHandler ...

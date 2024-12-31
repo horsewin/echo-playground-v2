@@ -21,15 +21,21 @@ all:
 # delete debug symbols by golang option -dlflags "-s -w"
 build:
 	$(GOBUILD) -o $(BUILD_PATH)/$(BINARY_NAME) -ldflags "-s -w" $(APP_PATH)/main.go
+
 validate:
 	$(GOFMT) ./...
 	$(GOVET) ./...
 	$(GOTEST) -v ./...
+
 clean:
 	rm -f $(BUILD_PATH)/$(BINARY_NAME)
 	rm -f $(BUILD_PATH)/$(BINARY_UNIX)
+
 run:
 	$(BUILD_PATH)/$(BINARY_NAME)
+
+update-deps:
+    $(GOGET) -u ./...
 
 # cross-compile for linux
 build-linux:
