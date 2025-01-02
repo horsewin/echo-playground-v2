@@ -57,6 +57,13 @@ https://dev.mysql.com/downloads/mysql/
 
 #### ローカルで動かす場合
 
+```text
+export DB_HOST=localhost
+export DB_USERNAME=sbcntrapp
+export DB_PASSWORD=password
+export DB_NAME=sbcntrapp
+```
+
 ```bash
 ❯ make all
 ```

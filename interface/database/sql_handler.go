@@ -2,9 +2,9 @@ package database
 
 // SQLHandler ...
 type SQLHandler interface {
-	Where(out interface{}, query interface{}, args ...interface{}) interface{}
-	Scan(out interface{}, order string) interface{}
-	Count(out *int, model interface{}, query interface{}, args ...interface{}) interface{}
-	Create(input interface{}) (result interface{}, err error)
-	Update(out interface{}, value interface{}, query interface{}, args ...interface{}) interface{}
+	Where(interface{}, string, string, ...interface{}) error
+	Scan(interface{}, string, string) error
+	Count(*int, string, string, ...interface{}) error
+	Create(interface{}) error
+	Update(interface{}, string, string, ...interface{}) error
 }

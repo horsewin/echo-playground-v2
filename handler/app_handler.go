@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/labstack/echo/v4"
 	"net/http"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/horsewin/echo-playground-v2/interface/database"
 	"github.com/horsewin/echo-playground-v2/usecase"
 	"github.com/horsewin/echo-playground-v2/utils"
-	
 )
 
 // AppHandler ...

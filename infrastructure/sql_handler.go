@@ -77,7 +77,7 @@ func (handler *SQLHandler) Count(out *int, table string, whereClause string, whe
 // Create ...
 func (handler *SQLHandler) Create(input interface{}) error {
 	table := reflect.TypeOf(input).Elem().Name() // ポインタをdereference
-	columns, values, args := buildNamedParameters(input)
+	columns, values, _ := buildNamedParameters(input)
 
 	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, strings.Join(columns, ","), strings.Join(values, ","))
 
@@ -88,7 +88,7 @@ func (handler *SQLHandler) Create(input interface{}) error {
 // Update ...
 func (handler *SQLHandler) Update(input interface{}, table string, whereClause string, whereArgs ...interface{}) error {
 
-	columns, values, _ := buildNamedParameters(input)
+	columns, _, _ := buildNamedParameters(input)
 
 	setClauses := make([]string, len(columns))
 	for i, col := range columns {

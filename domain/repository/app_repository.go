@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/interface/database"
 )
@@ -20,19 +21,21 @@ type AppRepository struct {
 
 // FindAll ...
 func (repo *AppRepository) FindAll() (items model.Items, err error) {
-	repo.SQLHandler.Scan(&items.Data, "id desc")
-	return
+	// TODO: impl
+	return model.Items{}, fmt.Errorf("not implemented")
 }
 
 // Find ...
 func (repo *AppRepository) Find(query interface{}, args ...interface{}) (items model.Items, err error) {
-	repo.SQLHandler.Where(&items.Data, query, args...)
-	return
+	//repo.SQLHandler.Where(&items.Data, query, args...)
+	//return
+	// TODO: impl
+	return model.Items{}, fmt.Errorf("not implemented")
 }
 
 // Create ...
 func (repo *AppRepository) Create(input model.Item) (out model.Response, err error) {
-	_, err = repo.SQLHandler.Create(&input)
+	err = repo.SQLHandler.Create(&input)
 
 	if err != nil {
 		return model.Response{
@@ -51,7 +54,7 @@ func (repo *AppRepository) Create(input model.Item) (out model.Response, err err
 func (repo *AppRepository) Update(value map[string]interface{}, query interface{}, args ...interface{}) (item model.Item, err error) {
 	// NOTE: When update with struct, GORM will only update non-zero fields,
 	// you might want to use map to update attributes or use Select to specify fields to update
-	repo.SQLHandler.Update(&item, value, query, args...)
-
-	return
+	//repo.SQLHandler.Update(&item, value, query, args...)
+	// TODO: impl
+	return model.Item{}, fmt.Errorf("not implemented")
 }

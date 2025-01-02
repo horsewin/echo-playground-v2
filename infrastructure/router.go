@@ -1,9 +1,9 @@
 package infrastructure
 
 import (
+	handlers "github.com/horsewin/echo-playground-v2/handler"
 	"os"
 
-	handlers "github.com/horsewin
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
