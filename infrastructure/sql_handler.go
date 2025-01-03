@@ -57,13 +57,19 @@ func NewSQLHandler() *SQLHandler {
 }
 
 // Where ...
-func (handler *SQLHandler) Where(out interface{}, table string, query string, args map[string]interface{}) error {
-	if query == "" {
-		query = fmt.Sprintf("SELECT * FROM %s", table)
-	} else {
-		query = fmt.Sprintf("SELECT * FROM %s WHERE %s", table, query)
+func (handler *SQLHandler) Where(out interface{}, table string, whereClause string, whereArgs map[string]interface{}) error {
+	query := fmt.Sprintf("SELECT * FROM %s", table)
+	if whereClause != "" {
+		query += fmt.Sprintf(" WHERE %s", whereClause)
 	}
-	return handler.Conn.Select(out, query, args)
+
+	stmt, err := handler.Conn.PrepareNamed(query)
+	if err != nil {
+		return err
+	}
+
+	err = stmt.Select(out, whereArgs)
+	return err
 }
 
 // Scan ...
