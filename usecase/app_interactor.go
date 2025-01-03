@@ -48,7 +48,9 @@ func (interactor *AppInteractor) CreateItem(input model.Item) (response model.Re
 
 // UpdateFavoriteAttr ...
 func (interactor *AppInteractor) UpdateFavoriteAttr(input model.Item) (item model.Item, err error) {
-	item, err = interactor.AppRepository.Update(map[string]interface{}{"Favorite": input.Favorite}, "id = ?", input.ID)
+	whereClause := "id = ?"
+	whereArgs := map[string]interface{}{"id": input.ID}
+	err = interactor.AppRepository.Update(map[string]interface{}{"Favorite": input.Favorite}, whereClause, whereArgs)
 
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")

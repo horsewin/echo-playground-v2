@@ -11,7 +11,7 @@ type AppRepositoryInterface interface {
 	FindAll() (items model.Items, err error)
 	Find(query interface{}, args ...interface{}) (items model.Items, err error)
 	Create(input model.Item) (out model.Response, err error)
-	Update(value map[string]interface{}, query interface{}, args ...interface{}) (item model.Item, err error)
+	Update(in map[string]interface{}, query string, args map[string]interface{}) (err error)
 }
 
 // AppRepository ...
@@ -19,17 +19,20 @@ type AppRepository struct {
 	database.SQLHandler
 }
 
+// TODO: itemにする
+const ItemsTable = "items"
+
 // FindAll ...
 func (repo *AppRepository) FindAll() (items model.Items, err error) {
-	// TODO: impl
-	return model.Items{}, fmt.Errorf("not implemented")
+	err = repo.SQLHandler.Scan(&items.Data, NotificationTable, "id desc")
+	return items, err
 }
 
 // Find ...
 func (repo *AppRepository) Find(query interface{}, args ...interface{}) (items model.Items, err error) {
-	//repo.SQLHandler.Where(&items.Data, query, args...)
-	//return
 	// TODO: impl
+	//err = repo.SQLHandler.Scan(&notifications.Data, NotificationTable, "id desc")
+	//return notifications, err
 	return model.Items{}, fmt.Errorf("not implemented")
 }
 
@@ -46,7 +49,7 @@ func (repo *AppRepository) Create(input model.Item) (out model.Response, err err
 		"updated_at": input.UpdatedAt,
 	}
 
-	err = repo.SQLHandler.Create(in)
+	err = repo.SQLHandler.Create(in, ItemsTable)
 
 	if err != nil {
 		return model.Response{
@@ -62,8 +65,7 @@ func (repo *AppRepository) Create(input model.Item) (out model.Response, err err
 }
 
 // Update ...
-func (repo *AppRepository) Update(value map[string]interface{}, query interface{}, args ...interface{}) (item model.Item, err error) {
-	//repo.SQLHandler.Update(&item, value, query, args...)
-	// TODO: impl
-	return model.Item{}, fmt.Errorf("not implemented")
+func (repo *AppRepository) Update(in map[string]interface{}, query string, args map[string]interface{}) (err error) {
+	err = repo.SQLHandler.Update(in, ItemsTable, query, args)
+	return
 }

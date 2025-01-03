@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
 	"strings"
 	"sync"
 
@@ -98,12 +97,21 @@ func (handler *SQLHandler) Count(out *int, table string, whereClause string, whe
 }
 
 // Create ...
-func (handler *SQLHandler) Create(input map[string]interface{}) error {
-	table := reflect.TypeOf(input).Elem().Name() // ポインタをdereference
-	columns, values, _ := buildNamedParameters(input)
+func (handler *SQLHandler) Create(input map[string]interface{}, table string) error {
+	// カラム名とプレースホルダーを構築
+	columns := make([]string, 0)
+	placeholders := make([]string, 0)
 
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, strings.Join(columns, ","), strings.Join(values, ","))
+	// inputのキーと値をそれぞれ列と値に追加
+	for key := range input {
+		columns = append(columns, key)
+		placeholders = append(placeholders, fmt.Sprintf(":%s", key)) // プレースホルダーを使う
+	}
 
+	// クエリを構築
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, strings.Join(columns, ","), strings.Join(placeholders, ","))
+
+	fmt.Println(query)
 	_, err := handler.Conn.NamedExec(query, input)
 	return err
 }
