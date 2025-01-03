@@ -10,8 +10,8 @@ import (
 type NotificationRepositoryInterface interface {
 	Where(id string) (account model.Notifications, err error)
 	FindAll() (notifications model.Notifications, err error)
-	Count(query interface{}, args ...interface{}) (data model.NotificationCount, err error)
-	Update(value map[string]interface{}, query interface{}, args ...interface{}) (notification model.Notification, err error)
+	Count(query string, args map[string]interface{}) (data model.NotificationCount, err error)
+	Update(value map[string]interface{}, query string, args map[string]interface{}) (notification model.Notification, err error)
 }
 
 // NotificationRepository ....
@@ -23,7 +23,9 @@ const TABLE_NAME = "Notification"
 
 // Where ...
 func (repo *NotificationRepository) Where(id string) (notifications model.Notifications, err error) {
-	repo.SQLHandler.Where(&notifications.Data, "id = ?", id)
+	whereClause := "id = :id"
+	whereArgs := map[string]interface{}{"id": id}
+	err = repo.SQLHandler.Where(&notifications.Data, TABLE_NAME, whereClause, whereArgs)
 	return
 }
 
@@ -34,19 +36,15 @@ func (repo *NotificationRepository) FindAll() (notifications model.Notifications
 }
 
 // Count ...
-func (repo *NotificationRepository) Count(query interface{}, args ...interface{}) (data model.NotificationCount, err error) {
-	// TODO: impl
-	return model.NotificationCount{Data: 0}, fmt.Errorf("not implemented")
-
-	//var count int
-	//repo.SQLHandler.Count(&count, &model.Notification{}, query, args...)
-	//
-	//return model.NotificationCount{Data: count}, nil
+func (repo *NotificationRepository) Count(query string, args map[string]interface{}) (data model.NotificationCount, err error) {
+	var count int
+	err = repo.SQLHandler.Count(&count, TABLE_NAME, query, args)
+	return model.NotificationCount{Data: count}, err
 }
 
 // Update ...
-func (repo *NotificationRepository) Update(value map[string]interface{}, query interface{}, args ...interface{}) (notification model.Notification, err error) {
-	//repo.SQLHandler.Update(&notification, value, query, args...)
+func (repo *NotificationRepository) Update(value map[string]interface{}, query string, args map[string]interface{}) (notification model.Notification, err error) {
+	//repo.SQLHandler.Update(&notification, value, query, args)
 	//return
 	// TODO: impl
 	return model.Notification{}, fmt.Errorf("not implemented")

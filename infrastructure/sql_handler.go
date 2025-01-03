@@ -57,13 +57,13 @@ func NewSQLHandler() *SQLHandler {
 }
 
 // Where ...
-func (handler *SQLHandler) Where(out interface{}, table string, query string, args ...interface{}) error {
+func (handler *SQLHandler) Where(out interface{}, table string, query string, args map[string]interface{}) error {
 	if query == "" {
 		query = fmt.Sprintf("SELECT * FROM %s", table)
 	} else {
 		query = fmt.Sprintf("SELECT * FROM %s WHERE %s", table, query)
 	}
-	return handler.Conn.Select(out, query, args...)
+	return handler.Conn.Select(out, query, args)
 }
 
 // Scan ...
@@ -74,14 +74,19 @@ func (handler *SQLHandler) Scan(out interface{}, table string, order string) err
 }
 
 // Count ...
-func (handler *SQLHandler) Count(out *int, table string, whereClause string, whereArgs ...interface{}) error {
+func (handler *SQLHandler) Count(out *int, table string, whereClause string, whereArgs map[string]interface{}) error {
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
 	if whereClause != "" {
 		query += fmt.Sprintf(" WHERE %s", whereClause)
 	}
 
 	var count int
-	err := handler.Conn.Get(&count, query, whereArgs...)
+	stmt, err := handler.Conn.PrepareNamed(query)
+	if err != nil {
+		return err
+	}
+
+	err = stmt.Get(&count, whereArgs)
 	*out = count
 	return err
 }
@@ -98,7 +103,7 @@ func (handler *SQLHandler) Create(input interface{}) error {
 }
 
 // Update ...
-func (handler *SQLHandler) Update(input interface{}, table string, whereClause string, whereArgs ...interface{}) error {
+func (handler *SQLHandler) Update(input interface{}, table string, whereClause string, whereArgs map[string]interface{}) error {
 
 	columns, _, _ := buildNamedParameters(input)
 
