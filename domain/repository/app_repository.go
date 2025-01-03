@@ -52,8 +52,6 @@ func (repo *AppRepository) Create(input model.Item) (out model.Response, err err
 
 // Update ...
 func (repo *AppRepository) Update(value map[string]interface{}, query interface{}, args ...interface{}) (item model.Item, err error) {
-	// NOTE: When update with struct, GORM will only update non-zero fields,
-	// you might want to use map to update attributes or use Select to specify fields to update
 	//repo.SQLHandler.Update(&item, value, query, args...)
 	// TODO: impl
 	return model.Item{}, fmt.Errorf("not implemented")

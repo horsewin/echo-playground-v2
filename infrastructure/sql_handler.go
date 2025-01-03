@@ -3,12 +3,14 @@ package infrastructure
 import (
 	"fmt"
 	"log"
+	"os"
 	"reflect"
 	"strings"
+	"sync"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/horsewin/echo-playground-v2/utils"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 // DB ...
@@ -25,23 +27,33 @@ type SQLHandler struct {
 	Conn *sqlx.DB
 }
 
+var (
+	sqlHandlerInstance *SQLHandler
+	once               sync.Once
+)
+
 // NewSQLHandler ...
 func NewSQLHandler() *SQLHandler {
-	c := utils.NewConfigDB()
-	USER := c.MySQL.Username
-	PASS := c.MySQL.Password
-	PROTOCOL := c.MySQL.Protocol
-	DBNAME := c.MySQL.DBName
-	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME + "?parseTime=true&loc=Asia%2FTokyo"
+	once.Do(func() {
+		c := utils.NewConfigDB()
+		USER := c.Postgres.Username
+		PASS := c.Postgres.Password
+		DBNAME := c.Postgres.DBName
+		PROTOCOL := "host=" + os.Getenv("DB_HOST") + " port=5432"
+		CONNECT := "user=" + USER + " password=" + PASS + " " + PROTOCOL + " dbname=" + DBNAME + " sslmode=disable"
 
-	conn, err := sqlx.Connect("mysql", CONNECT)
-	if err != nil {
-		log.Fatalf("Error: No database connection established: %v", err)
-	}
+		conn, err := sqlx.Connect("postgres", CONNECT)
+		if err != nil {
+			log.Fatalf("Error: No database connection established: %v", err)
+		}
 
-	sqlHandler := new(SQLHandler)
-	sqlHandler.Conn = conn
-	return sqlHandler
+		// 接続成功
+		fmt.Println("DB connected successfully")
+
+		sqlHandlerInstance = &SQLHandler{Conn: conn}
+	})
+
+	return sqlHandlerInstance
 }
 
 // Where ...
@@ -56,7 +68,7 @@ func (handler *SQLHandler) Where(out interface{}, table string, query string, ar
 
 // Scan ...
 func (handler *SQLHandler) Scan(out interface{}, table string, order string) error {
-	query := fmt.Sprintf("SELECT * FROM %s ORDER BY %s", table, order)
+	query := fmt.Sprintf("SELECT * FROM %s ORDER BY %s;", table, order)
 	return handler.Conn.Select(out, query)
 
 }

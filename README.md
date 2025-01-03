@@ -7,9 +7,9 @@ echoフレームワークを利用した、Golang製のAPIサーバーです。
 Golangには数多くのフレームワークがあります。
 REST APIサーバーを実装するために十分な機能が備わっていることや、ドキュメントが充実していることから今回echoを選択しています。
 
-APIサーバーとDB(MySQL)の接続はO/RマッパライブラリであるGORM[^gorm]を利用しています。
+APIサーバーとDB(Postgres)の接続はO/Rマッパライブラリであるsqlx[^sqlx]を利用しています。
 
-[^gorm]: https://gorm.io/
+[^sqlx]: https://jmoiron.github.io/sqlx/
 
 バックエンドアプリケーションは次の2つのサービスを備えています。
 また、各APIエンドポイントの接頭辞として、`/v1`が付与されます。
@@ -49,9 +49,7 @@ $ go mod download
 
 ### DBの用意
 
-事前にローカルでMySQLサーバを立ち上げてください。
-
-https://dev.mysql.com/downloads/mysql/
+事前にローカルでPostgresサーバを立ち上げてください。
 
 ### ビルド＆デプロイ
 
@@ -62,6 +60,7 @@ export DB_HOST=localhost
 export DB_USERNAME=sbcntrapp
 export DB_PASSWORD=password
 export DB_NAME=sbcntrapp
+export DB_CONN=1
 ```
 
 ```bash

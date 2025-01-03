@@ -2,8 +2,8 @@ package model
 
 // App ... entity for db result
 type App struct {
-	ID      string `json:"id" gorm:"column:id"`
-	Message string `json:"message" gorm:"column:message"`
+	ID      string `json:"id" db:"id"`
+	Message string `json:"message" db:"message"`
 }
 
 // Response ...
@@ -20,13 +20,13 @@ type Hello struct {
 type (
 	// Item ...
 	Item struct {
-		ID        int    `json:"id" gorm:"column:id"`
-		Title     string `json:"title" gorm:"column:title"`
-		Name      string `json:"name" gorm:"column:name"`
-		Favorite  bool   `json:"favorite" gorm:"column:favorite"`
-		Img       string `json:"img" gorm:"column:img"`
-		CreatedAt string `json:"createdAt" gorm:"column:createdAt"`
-		UpdatedAt string `json:"updatedAt" gorm:"column:updatedAt"`
+		ID        int    `json:"id" db:"id"`
+		Title     string `json:"title" db:"title"`
+		Name      string `json:"name" db:"name"`
+		Favorite  bool   `json:"favorite" db:"favorite"`
+		Img       string `json:"img" db:"img"`
+		CreatedAt string `json:"createdAt" db:"created_at"`
+		UpdatedAt string `json:"updatedAt" db:"updated_at"`
 	}
 
 	// Items ...
@@ -34,8 +34,3 @@ type (
 		Data []Item `json:"data"`
 	}
 )
-
-// TableName ... override GORM table name accessor
-func (Item) TableName() string {
-	return "Item"
-}

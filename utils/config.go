@@ -13,7 +13,7 @@ type APIConfig struct {
 
 // ConfigDB ...
 type ConfigDB struct {
-	MySQL struct {
+	Postgres struct {
 		DBMS     string
 		Protocol string
 		Username string
@@ -34,11 +34,11 @@ func NewAPIConfig() *APIConfig {
 func NewConfigDB() *ConfigDB {
 	config := new(ConfigDB)
 
-	config.MySQL.DBMS = "mysql"
-	config.MySQL.Protocol = "tcp(" + os.Getenv("DB_HOST") + ":3306)"
-	config.MySQL.Username = os.Getenv("DB_USERNAME")
-	config.MySQL.Password = os.Getenv("DB_PASSWORD")
-	config.MySQL.DBName = os.Getenv("DB_NAME")
+	config.Postgres.DBMS = "postgres"
+	config.Postgres.Protocol = "tcp(" + os.Getenv("DB_HOST") + ":3306)"
+	config.Postgres.Username = os.Getenv("DB_USERNAME")
+	config.Postgres.Password = os.Getenv("DB_PASSWORD")
+	config.Postgres.DBName = os.Getenv("DB_NAME")
 
 	return config
 }

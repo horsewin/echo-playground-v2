@@ -19,6 +19,8 @@ type NotificationRepository struct {
 	database.SQLHandler
 }
 
+const TABLE_NAME = "Notification"
+
 // Where ...
 func (repo *NotificationRepository) Where(id string) (notifications model.Notifications, err error) {
 	repo.SQLHandler.Where(&notifications.Data, "id = ?", id)
@@ -27,9 +29,8 @@ func (repo *NotificationRepository) Where(id string) (notifications model.Notifi
 
 // FindAll ...
 func (repo *NotificationRepository) FindAll() (notifications model.Notifications, err error) {
-	// TODO: impl
-	//repo.SQLHandler.Scan(&notifications.Data, "id desc")
-	return model.Notifications{}, fmt.Errorf("not implemented")
+	err = repo.SQLHandler.Scan(&notifications.Data, TABLE_NAME, "id desc")
+	return notifications, err
 }
 
 // Count ...
@@ -45,8 +46,6 @@ func (repo *NotificationRepository) Count(query interface{}, args ...interface{}
 
 // Update ...
 func (repo *NotificationRepository) Update(value map[string]interface{}, query interface{}, args ...interface{}) (notification model.Notification, err error) {
-	// NOTE: When update with struct, GORM will only update non-zero fields,
-	// you might want to use map to update attributes or use Select to specify fields to update
 	//repo.SQLHandler.Update(&notification, value, query, args...)
 	//return
 	// TODO: impl

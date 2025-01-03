@@ -26,22 +26,24 @@ func Router() *echo.Echo {
 	e.HideBanner = true
 	e.HidePort = false
 
-	AppHandler := handlers.NewAppHandler(NewSQLHandler())
 	healthCheckHandler := handlers.NewHealthCheckHandler()
 	helloWorldHandler := handlers.NewHelloWorldHandler()
-	NotificationHandler := handlers.NewNotificationHandler(NewSQLHandler())
-
 	e.GET("/", healthCheckHandler.HealthCheck())
 	e.GET("/healthcheck", healthCheckHandler.HealthCheck())
 	e.GET("/v1/helloworld", helloWorldHandler.SayHelloWorld())
 
-	e.GET("/v1/Items", AppHandler.GetItems())
-	e.POST("/v1/Item", AppHandler.CreateItem())
-	e.POST("/v1/Item/favorite", AppHandler.UpdateFavoriteAttr())
+	if os.Getenv("DB_CONN") == "1" {
+		AppHandler := handlers.NewAppHandler(NewSQLHandler())
+		NotificationHandler := handlers.NewNotificationHandler(NewSQLHandler())
 
-	e.GET("/v1/Notifications", NotificationHandler.GetNotifications())
-	e.GET("/v1/Notifications/Count", NotificationHandler.GetUnreadNotificationCount())
-	e.POST("/v1/Notifications/Read", NotificationHandler.PostNotificationsRead())
+		e.GET("/v1/Items", AppHandler.GetItems())
+		e.POST("/v1/Item", AppHandler.CreateItem())
+		e.POST("/v1/Item/favorite", AppHandler.UpdateFavoriteAttr())
+
+		e.GET("/v1/Notifications", NotificationHandler.GetNotifications())
+		e.GET("/v1/Notifications/Count", NotificationHandler.GetUnreadNotificationCount())
+		e.POST("/v1/Notifications/Read", NotificationHandler.PostNotificationsRead())
+	}
 
 	return e
 }
