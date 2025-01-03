@@ -50,7 +50,8 @@ func (interactor *NotificationInteractor) GetUnreadNotificationCount() (count mo
 func (interactor *NotificationInteractor) MarkNotificationsRead() (notification model.Notification, err error) {
 	clause := "unread = :unread"
 	args := map[string]interface{}{"unread": true}
-	notification, err = interactor.NotificationRepository.Update(map[string]interface{}{"Unread": false}, clause, args)
+	fmt.Println(args)
+	err = interactor.NotificationRepository.Update(map[string]interface{}{"Unread": false}, clause, args)
 
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")

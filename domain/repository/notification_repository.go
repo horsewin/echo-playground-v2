@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/interface/database"
 )
@@ -11,7 +10,7 @@ type NotificationRepositoryInterface interface {
 	Where(id string) (account model.Notifications, err error)
 	FindAll() (notifications model.Notifications, err error)
 	Count(query string, args map[string]interface{}) (data model.NotificationCount, err error)
-	Update(value map[string]interface{}, query string, args map[string]interface{}) (notification model.Notification, err error)
+	Update(in map[string]interface{}, query string, args map[string]interface{}) (err error)
 }
 
 // NotificationRepository ....
@@ -43,9 +42,7 @@ func (repo *NotificationRepository) Count(query string, args map[string]interfac
 }
 
 // Update ...
-func (repo *NotificationRepository) Update(value map[string]interface{}, query string, args map[string]interface{}) (notification model.Notification, err error) {
-	//repo.SQLHandler.Update(&notification, value, query, args)
-	//return
-	// TODO: impl
-	return model.Notification{}, fmt.Errorf("not implemented")
+func (repo *NotificationRepository) Update(in map[string]interface{}, query string, args map[string]interface{}) (err error) {
+	err = repo.SQLHandler.Update(in, TABLE_NAME, query, args)
+	return
 }

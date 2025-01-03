@@ -35,7 +35,18 @@ func (repo *AppRepository) Find(query interface{}, args ...interface{}) (items m
 
 // Create ...
 func (repo *AppRepository) Create(input model.Item) (out model.Response, err error) {
-	err = repo.SQLHandler.Create(&input)
+	// inputをmap[string]interface{}に変換
+	in := map[string]interface{}{
+		"id":         input.ID,
+		"title":      input.Title,
+		"name":       input.Name,
+		"favorite":   input.Favorite,
+		"img":        input.Img,
+		"created_at": input.CreatedAt,
+		"updated_at": input.UpdatedAt,
+	}
+
+	err = repo.SQLHandler.Create(in)
 
 	if err != nil {
 		return model.Response{

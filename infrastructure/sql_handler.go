@@ -92,7 +92,7 @@ func (handler *SQLHandler) Count(out *int, table string, whereClause string, whe
 }
 
 // Create ...
-func (handler *SQLHandler) Create(input interface{}) error {
+func (handler *SQLHandler) Create(input map[string]interface{}) error {
 	table := reflect.TypeOf(input).Elem().Name() // ポインタをdereference
 	columns, values, _ := buildNamedParameters(input)
 
@@ -103,44 +103,33 @@ func (handler *SQLHandler) Create(input interface{}) error {
 }
 
 // Update ...
-func (handler *SQLHandler) Update(input interface{}, table string, whereClause string, whereArgs map[string]interface{}) error {
+func (handler *SQLHandler) Update(in map[string]interface{}, table string, whereClause string, whereArgs map[string]interface{}) error {
 
-	columns, _, _ := buildNamedParameters(input)
+	columns, _, values := buildNamedParameters(in)
 
 	setClauses := make([]string, len(columns))
 	for i, col := range columns {
-		setClauses[i] = fmt.Sprintf("%s = :%s", col, col)
+		setClauses[i] = fmt.Sprintf("%s = %v", col, values[col])
 	}
 
 	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", table, strings.Join(setClauses, ","), whereClause)
+	fmt.Println(query)
 
-	_, err := handler.Conn.NamedExec(query, input)
+	_, err := handler.Conn.NamedExec(query, whereArgs)
 
 	return err
 }
 
-// 変更点：map[string]interface{} を返すように変更
-func buildNamedParameters(input interface{}) (columns []string, values []string, args map[string]interface{}) {
+func buildNamedParameters(input map[string]interface{}) (columns []string, placeholderNames []string, values map[string]interface{}) {
 	columns = []string{}
-	values = []string{}
-	args = make(map[string]interface{})
+	placeholderNames = []string{}
+	values = make(map[string]interface{})
 
-	v := reflect.ValueOf(input)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Type().Field(i)
-		tag := field.Tag.Get("db")
-		if tag == "" || tag == "-" {
-			continue
-		}
-
-		if !v.Field(i).IsZero() {
-			columns = append(columns, tag)
-			values = append(values, ":"+tag)
-			args[tag] = v.Field(i).Interface() // 値をマップに追加
+	for key, value := range input {
+		if value != nil {
+			columns = append(columns, key)
+			placeholderNames = append(placeholderNames, ":"+key)
+			values[key] = value
 		}
 	}
 
