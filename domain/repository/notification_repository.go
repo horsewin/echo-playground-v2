@@ -7,7 +7,7 @@ import (
 
 // NotificationRepositoryInterface ...
 type NotificationRepositoryInterface interface {
-	Where(id string) (account model.Notifications, err error)
+	Find(id string) (account model.Notifications, err error)
 	FindAll() (notifications model.Notifications, err error)
 	Count(query string, args map[string]interface{}) (data model.NotificationCount, err error)
 	Update(in map[string]interface{}, query string, args map[string]interface{}) (err error)
@@ -20,8 +20,8 @@ type NotificationRepository struct {
 
 const NotificationTable = "Notification"
 
-// Where ...
-func (repo *NotificationRepository) Where(id string) (notifications model.Notifications, err error) {
+// Find ...
+func (repo *NotificationRepository) Find(id string) (notifications model.Notifications, err error) {
 	whereClause := "id = :id"
 	whereArgs := map[string]interface{}{"id": id}
 	err = repo.SQLHandler.Where(&notifications.Data, NotificationTable, whereClause, whereArgs)

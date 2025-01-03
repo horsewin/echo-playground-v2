@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/horsewin/echo-playground-v2/domain/model"
 	"net/http"
 
 	"github.com/horsewin/echo-playground-v2/domain/repository"
@@ -55,11 +56,14 @@ func (handler *NotificationHandler) GetUnreadNotificationCount() echo.HandlerFun
 // PostNotificationsRead ...
 func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		resJSON, err := handler.Interactor.MarkNotificationsRead()
+		err = handler.Interactor.MarkNotificationsRead()
 		if err != nil {
 			return utils.GetErrorMassage(c, "en", err)
 		}
 
-		return c.JSON(http.StatusOK, resJSON)
+		return c.JSON(http.StatusOK, model.Response{
+			Code:    http.StatusOK,
+			Message: "OK",
+		})
 	}
 }

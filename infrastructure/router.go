@@ -38,7 +38,7 @@ func Router() *echo.Echo {
 
 		e.GET("/v1/Items", AppHandler.GetItems())
 		e.POST("/v1/Item", AppHandler.CreateItem())
-		e.POST("/v1/Item/favorite", AppHandler.UpdateFavoriteAttr())
+		e.POST("/v1/Item/Favorite", AppHandler.UpdateFavoriteAttr())
 
 		e.GET("/v1/Notifications", NotificationHandler.GetNotifications())
 		e.GET("/v1/Notifications/Count", NotificationHandler.GetUnreadNotificationCount())

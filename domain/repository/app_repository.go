@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/interface/database"
 )
@@ -9,7 +8,7 @@ import (
 // AppRepositoryInterface ...
 type AppRepositoryInterface interface {
 	FindAll() (items model.Items, err error)
-	Find(query interface{}, args ...interface{}) (items model.Items, err error)
+	Find(whereClause string, whereArgs map[string]interface{}) (items model.Items, err error)
 	Create(input model.Item) (out model.Response, err error)
 	Update(in map[string]interface{}, query string, args map[string]interface{}) (err error)
 }
@@ -24,23 +23,20 @@ const ItemsTable = "items"
 
 // FindAll ...
 func (repo *AppRepository) FindAll() (items model.Items, err error) {
-	err = repo.SQLHandler.Scan(&items.Data, NotificationTable, "id desc")
+	err = repo.SQLHandler.Scan(&items.Data, ItemsTable, "id desc")
 	return items, err
 }
 
 // Find ...
-func (repo *AppRepository) Find(query interface{}, args ...interface{}) (items model.Items, err error) {
-	// TODO: impl
-	//err = repo.SQLHandler.Scan(&notifications.Data, NotificationTable, "id desc")
-	//return notifications, err
-	return model.Items{}, fmt.Errorf("not implemented")
+func (repo *AppRepository) Find(whereClause string, whereArgs map[string]interface{}) (items model.Items, err error) {
+	err = repo.SQLHandler.Where(&items.Data, ItemsTable, whereClause, whereArgs)
+	return
 }
 
 // Create ...
 func (repo *AppRepository) Create(input model.Item) (out model.Response, err error) {
 	// inputをmap[string]interface{}に変換
 	in := map[string]interface{}{
-		"id":         input.ID,
 		"title":      input.Title,
 		"name":       input.Name,
 		"favorite":   input.Favorite,

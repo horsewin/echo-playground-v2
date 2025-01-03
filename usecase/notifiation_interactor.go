@@ -22,7 +22,7 @@ func (interactor *NotificationInteractor) GetNotifications(id string) (app model
 		}
 
 	} else {
-		app, err = interactor.NotificationRepository.Where(id)
+		app, err = interactor.NotificationRepository.Find(id)
 		if err != nil {
 			err = utils.SetErrorMassage("10001E")
 			return
@@ -47,10 +47,9 @@ func (interactor *NotificationInteractor) GetUnreadNotificationCount() (count mo
 }
 
 // MarkNotificationsRead ...
-func (interactor *NotificationInteractor) MarkNotificationsRead() (notification model.Notification, err error) {
+func (interactor *NotificationInteractor) MarkNotificationsRead() (err error) {
 	clause := "unread = :unread"
 	args := map[string]interface{}{"unread": true}
-	fmt.Println(args)
 	err = interactor.NotificationRepository.Update(map[string]interface{}{"Unread": false}, clause, args)
 
 	if err != nil {

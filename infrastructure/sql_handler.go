@@ -104,6 +104,11 @@ func (handler *SQLHandler) Create(input map[string]interface{}, table string) er
 
 	// inputのキーと値をそれぞれ列と値に追加
 	for key := range input {
+		// IDが設定されていても無視する
+		if key == "id" {
+			continue
+		}
+
 		columns = append(columns, key)
 		placeholders = append(placeholders, fmt.Sprintf(":%s", key)) // プレースホルダーを使う
 	}

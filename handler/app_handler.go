@@ -95,11 +95,14 @@ func (handler *AppHandler) UpdateFavoriteAttr() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		resJSON, err := handler.Interactor.UpdateFavoriteAttr(*input)
+		err = handler.Interactor.UpdateFavoriteAttr(*input)
 		if err != nil {
 			return utils.GetErrorMassage(c, "en", err)
 		}
 
-		return c.JSON(http.StatusOK, resJSON)
+		return c.JSON(http.StatusOK, model.Response{
+			Code:    http.StatusOK,
+			Message: "OK",
+		})
 	}
 }
