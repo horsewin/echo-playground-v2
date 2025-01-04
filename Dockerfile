@@ -1,27 +1,31 @@
 # Multi stage building strategy for reducing image size.
-FROM golang:1.16.8-alpine3.13 AS build-env
-ENV GO111MODULE=on
+FROM golang:1.23.4 AS build-env
+ENV GO111MODULE=on \
+    GOPATH=/go \
+    GOBIN=/go/bin \
+    PATH=/go/bin:$PATH
+
+# Set working directory
 RUN mkdir /app
 WORKDIR /app
 
 # Install each dependencies
-COPY go.mod /app
-COPY go.sum /app
+COPY go.mod go.sum ./
 RUN go mod download
-RUN apk add --no-cache --virtual git gcc make build-base alpine-sdk
+
+# Install golangci-lint
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.63.4
 
 # COPY main module
 COPY . /app
 
 # Check and Build
-RUN go get golang.org/x/lint/golint && \
-    make validate && \
+RUN make validate && \
     make build-linux
 
 ### If use TLS connection in container, add ca-certificates following command.
-### > RUN apk add --no-cache ca-certificates
+### > RUN apt-get update && apt-get install -y ca-certificates
 FROM gcr.io/distroless/base-debian10
-COPY --from=build-env /app/main /
+COPY --from=build-env /app/bin/main /
 EXPOSE 80
 ENTRYPOINT ["/main"]
-
