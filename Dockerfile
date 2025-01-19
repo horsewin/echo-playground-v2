@@ -25,7 +25,7 @@ RUN make validate && \
 
 ### If use TLS connection in container, add ca-certificates following command.
 ### > RUN apt-get update && apt-get install -y ca-certificates
-FROM gcr.io/distroless/base-debian10
+FROM gcr.io/distroless/base-debian12
 COPY --from=build-env /app/bin/main /
 EXPOSE 80
 ENTRYPOINT ["/main"]

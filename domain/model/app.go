@@ -14,7 +14,7 @@ type Response struct {
 
 // Hello ... entity for hello message
 type Hello struct {
-	Data string `json:"data" xml:"data"`
+	Message string `json:"message" xml:"message"`
 }
 
 type (
