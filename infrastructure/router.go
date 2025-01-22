@@ -33,16 +33,17 @@ func Router() *echo.Echo {
 	e.GET("/v1/helloworld", helloWorldHandler.SayHelloWorld())
 
 	if os.Getenv("DB_CONN") == "1" {
-		AppHandler := handlers.NewAppHandler(NewSQLHandler())
-		NotificationHandler := handlers.NewNotificationHandler(NewSQLHandler())
+		sqlHandler := NewSQLHandler()
+		petHandler := handlers.NewPetHandler(sqlHandler)
+		notificationHandler := handlers.NewNotificationHandler(sqlHandler)
 
-		e.GET("/v1/Items", AppHandler.GetItems())
-		e.POST("/v1/Item", AppHandler.CreateItem())
-		e.POST("/v1/Item/Favorite", AppHandler.UpdateFavoriteAttr())
+		e.GET("/v1/Pets", petHandler.GetPets())
+		e.POST("/v1/Pet", petHandler.CreateItem())
+		//e.POST("/v1/Pet/Favorite", petHandler.UpdateFavoriteAttr())
 
-		e.GET("/v1/Notifications", NotificationHandler.GetNotifications())
-		e.GET("/v1/Notifications/Count", NotificationHandler.GetUnreadNotificationCount())
-		e.POST("/v1/Notifications/Read", NotificationHandler.PostNotificationsRead())
+		e.GET("/v1/Notifications", notificationHandler.GetNotifications())
+		e.GET("/v1/Notifications/Count", notificationHandler.GetUnreadNotificationCount())
+		e.POST("/v1/Notifications/Read", notificationHandler.PostNotificationsRead())
 	}
 
 	return e
