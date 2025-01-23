@@ -11,8 +11,8 @@ type PetInteractor struct {
 	PetRepository repository.PetRepositoryInterface
 }
 
-// Getpets ...
-func (interactor *PetInteractor) Getpets(gender string) (app model.Pets, err error) {
+// GetPets ...
+func (interactor *PetInteractor) GetPets(gender string) (app model.Pets, err error) {
 	var query string
 	var args map[string]interface{}
 	if gender == "male" {
@@ -26,11 +26,15 @@ func (interactor *PetInteractor) Getpets(gender string) (app model.Pets, err err
 		args = map[string]interface{}{}
 	}
 
-	app, err = interactor.PetRepository.Find(query, args)
+	// Repository層からデータを取得
+	_app, err := interactor.PetRepository.Find(query, args)
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")
 		return
 	}
+
+	// ドメインモデルに変換
+	app = _app
 
 	return
 }

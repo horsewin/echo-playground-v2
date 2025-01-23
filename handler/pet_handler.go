@@ -31,7 +31,7 @@ func NewPetHandler(sqlHandler database.SQLHandler) *PetHandler {
 func (handler *PetHandler) GetPets() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		gender := c.QueryParam("gender")
-		resJSON, err := handler.Interactor.Getpets(gender)
+		resJSON, err := handler.Interactor.GetPets(gender)
 		if err != nil {
 			return utils.GetErrorMassage(c, "en", err)
 		}
@@ -48,20 +48,6 @@ func (handler *PetHandler) CreateItem() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		// sample
-		// ('10',
-		// 'cute kitten',
-		// 'white cat',
-		// 'Female',
-		// 550000,
-		// 'https://images.unsplash.com/photo-1582797493098-23d8d0cc6769?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NjZ8fGtpdHRlbnxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=500&q=60',
-		// 6,
-		// 'uma-arai shop 2nd',
-		// 'Kanagawa',
-		// '2023-10-14',
-		// '0000012',
-		// '{"cute","famous","cool"}'
-		//);
 		input := model.Pet{
 			ID:              i.ID,
 			Name:            i.Name,
