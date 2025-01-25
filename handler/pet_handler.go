@@ -31,9 +31,14 @@ func NewPetHandler(sqlHandler database.SQLHandler) *PetHandler {
 func (handler *PetHandler) GetPets() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		gender := c.QueryParam("gender")
-		resJSON, err := handler.Interactor.GetPets(gender)
+		res, err := handler.Interactor.GetPets(gender)
 		if err != nil {
 			return utils.GetErrorMassage(c, "en", err)
+		}
+
+		// resの中身をJSONにして返却
+		resJSON := model.APIResponse{
+			Data: res,
 		}
 
 		return c.JSON(http.StatusOK, resJSON)
@@ -43,22 +48,10 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 // CreateItem ...
 func (handler *PetHandler) CreateItem() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		i := new(model.Pet)
-		if err = c.Bind(i); err != nil {
+		input := new(model.Pet)
+		// Bindでリクエストの中身をiに詰める
+		if err = c.Bind(input); err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-		}
-
-		input := model.Pet{
-			ID:              i.ID,
-			Name:            i.Name,
-			Price:           i.Price,
-			ShopName:        i.ShopName,
-			ShopLocation:    i.ShopLocation,
-			BirthDate:       i.BirthDate,
-			ReferenceNumber: i.ReferenceNumber,
-			Tags:            i.Tags,
-			ImageURL:        i.ImageURL,
-			Likes:           0,
 		}
 
 		if input.Name == "" {

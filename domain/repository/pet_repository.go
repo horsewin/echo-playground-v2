@@ -33,7 +33,7 @@ type pets struct {
 type PetRepositoryInterface interface {
 	FindAll() (pets pets, err error)
 	Find(whereClause string, whereArgs map[string]interface{}) (pets pets, err error)
-	Create(input pet) (out model.Response, err error)
+	Create(input *model.Pet) (out model.Response, err error)
 	Update(in map[string]interface{}, query string, args map[string]interface{}) (err error)
 }
 
@@ -57,7 +57,8 @@ func (repo *PetRepository) Find(whereClause string, whereArgs map[string]interfa
 }
 
 // Create ...
-func (repo *PetRepository) Create(input pet) (out model.Response, err error) {
+func (repo *PetRepository) Create(input *model.Pet) (out model.Response, err error) {
+
 	// inputをmap[string]interface{}に変換
 	in := map[string]interface{}{
 		"id":               input.ID,
@@ -67,8 +68,8 @@ func (repo *PetRepository) Create(input pet) (out model.Response, err error) {
 		"price":            input.Price,
 		"image_url":        input.ImageURL,
 		"likes":            input.Likes,
-		"shop_name":        input.ShopName,
-		"shop_location":    input.ShopLocation,
+		"shop_name":        input.Shop.Name,
+		"shop_location":    input.Shop.Location,
 		"birth_date":       input.BirthDate,
 		"reference_number": input.ReferenceNumber,
 		"tags":             input.Tags,

@@ -11,3 +11,8 @@ type Response struct {
 	Code    int    `json:"code" xml:"code"`
 	Message string `json:"msg" xml:"msg"`
 }
+
+// APIResponse ...
+type APIResponse struct {
+	Data interface{} `json:"data"`
+}

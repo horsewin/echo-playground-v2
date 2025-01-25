@@ -37,13 +37,13 @@ func Router() *echo.Echo {
 		petHandler := handlers.NewPetHandler(sqlHandler)
 		notificationHandler := handlers.NewNotificationHandler(sqlHandler)
 
-		e.GET("/v1/Pets", petHandler.GetPets())
-		e.POST("/v1/Pet", petHandler.CreateItem())
-		//e.POST("/v1/Pet/Favorite", petHandler.UpdateFavoriteAttr())
+		e.GET("/v1/pets", petHandler.GetPets())
+		e.POST("/v1/pet", petHandler.CreateItem())
+		e.PUT("/v1/pet/like", petHandler.UpdateFavoriteAttr())
 
-		e.GET("/v1/Notifications", notificationHandler.GetNotifications())
-		e.GET("/v1/Notifications/Count", notificationHandler.GetUnreadNotificationCount())
-		e.POST("/v1/Notifications/Read", notificationHandler.PostNotificationsRead())
+		e.GET("/v1/notifications", notificationHandler.GetNotifications())
+		e.GET("/v1/notifications/count", notificationHandler.GetUnreadNotificationCount())
+		e.POST("/v1/notifications/read", notificationHandler.PostNotificationsRead())
 	}
 
 	return e

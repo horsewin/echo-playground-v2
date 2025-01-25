@@ -12,7 +12,7 @@ type PetInteractor struct {
 }
 
 // GetPets ...
-func (interactor *PetInteractor) GetPets(gender string) (app model.Pets, err error) {
+func (interactor *PetInteractor) GetPets(gender string) (pets []model.Pet, err error) {
 	var query string
 	var args map[string]interface{}
 	if gender == "male" {
@@ -34,13 +34,30 @@ func (interactor *PetInteractor) GetPets(gender string) (app model.Pets, err err
 	}
 
 	// ドメインモデルに変換
-	app = _app
+	for _, p := range _app.Data {
+		pets = append(pets, model.Pet{
+			ID:       p.ID,
+			Name:     p.Name,
+			Breed:    p.Breed,
+			Gender:   p.Gender,
+			Price:    p.Price,
+			ImageURL: p.ImageURL,
+			Likes:    p.Likes,
+			Shop: model.Shop{
+				Name:     p.ShopName,
+				Location: p.ShopLocation,
+			},
+			BirthDate:       p.BirthDate,
+			ReferenceNumber: p.ReferenceNumber,
+			Tags:            p.Tags,
+		})
+	}
 
-	return
+	return pets, nil
 }
 
 // CreateItem ...
-func (interactor *PetInteractor) CreateItem(input model.Pet) (response model.Response, err error) {
+func (interactor *PetInteractor) CreateItem(input *model.Pet) (response model.Response, err error) {
 	response, err = interactor.PetRepository.Create(input)
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")
