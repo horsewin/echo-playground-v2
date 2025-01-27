@@ -69,4 +69,4 @@ update-deps:
 ##
 build-linux:
 	@echo "==> Cross compiling for Linux (amd64)"
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(MAKE) build
+	@GOOS=linux GOARCH=arm64 CGO_ENABLED=0 $(MAKE) build
