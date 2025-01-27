@@ -1,5 +1,5 @@
 # Multi stage building strategy for reducing image size.
-FROM golang:1.23.4 AS build-env
+FROM public.ecr.aws/docker/library/golang:1.23.4 AS build-env
 ENV GO111MODULE=on \
     GOPATH=/go \
     GOBIN=/go/bin \
