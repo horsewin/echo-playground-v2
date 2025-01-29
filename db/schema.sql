@@ -16,6 +16,26 @@ CREATE TABLE pets
     updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 新規に作成する reservations テーブル
+CREATE TABLE IF NOT EXISTS reservations
+(
+    -- 予約ごとに一意のIDを持たせる (UUID, SERIALなど)
+    reservation_id TEXT PRIMARY KEY,
+    -- ユーザを識別するID（外部の認証IDや社内システムIDなど任意）
+    user_id        TEXT    NOT NULL,
+    -- ユーザの氏名
+    user_name      TEXT    NOT NULL,
+    -- 予約対象のペットID
+    -- petsテーブルのidを参照 (FK)
+    pet_id         TEXT    NOT NULL REFERENCES pets (id) ON DELETE CASCADE,
+    -- 見学予定日時
+    reservation_datetime TIMESTAMP NOT NULL,
+    -- 予約レコードが作られた日時
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- 予約レコードが更新された日時
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 ---
 
 INSERT INTO pets (
