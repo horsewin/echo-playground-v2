@@ -67,10 +67,10 @@ func (interactor *PetInteractor) CreateItem(input *model.Pet) (response model.Re
 	return
 }
 
-// UpdateFavoriteAttr ...
-func (interactor *PetInteractor) UpdateFavoriteAttr(input model.Pet) (err error) {
+// UpdateLikeCount ...
+func (interactor *PetInteractor) UpdateLikeCount(input *model.InputUpdateLikeRequest) (err error) {
 	whereClause := "id = :id"
-	whereArgs := map[string]interface{}{"id": input.ID}
+	whereArgs := map[string]interface{}{"id": input.PetId}
 	err = interactor.PetRepository.Update(map[string]interface{}{"Favorite": input.Likes}, whereClause, whereArgs)
 
 	if err != nil {
@@ -79,4 +79,8 @@ func (interactor *PetInteractor) UpdateFavoriteAttr(input model.Pet) (err error)
 	}
 
 	return
+}
+
+func (interactor *PetInteractor) CreateReservation(input *model.Reservation) (err error) {
+
 }

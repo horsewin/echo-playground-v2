@@ -39,11 +39,13 @@ func Router() *echo.Echo {
 
 		e.GET("/v1/pets", petHandler.GetPets())
 		e.POST("/v1/pet", petHandler.CreateItem())
-		e.PUT("/v1/pet/like", petHandler.UpdateFavoriteAttr())
+		e.PUT("/v1/pets/:id/like", petHandler.UpdateLike())
 
 		e.GET("/v1/notifications", notificationHandler.GetNotifications())
 		e.GET("/v1/notifications/count", notificationHandler.GetUnreadNotificationCount())
 		e.POST("/v1/notifications/read", notificationHandler.PostNotificationsRead())
+
+		e.POST("/v1/pets/:id/reservation")
 	}
 
 	return e

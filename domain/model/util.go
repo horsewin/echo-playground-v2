@@ -6,6 +6,12 @@ type App struct {
 	Message string `json:"message" db:"message"`
 }
 
+type InputUpdateLikeRequest struct {
+	PetId  string `json:"petId"`
+	UserId string `json:"user_id"`
+	Value  bool   `json:"value"`
+}
+
 // Response ...
 type Response struct {
 	Code    int    `json:"code" xml:"code"`

@@ -69,15 +69,31 @@ func (handler *PetHandler) CreateItem() echo.HandlerFunc {
 	}
 }
 
-// UpdateFavoriteAttr ...
-func (handler *PetHandler) UpdateFavoriteAttr() echo.HandlerFunc {
+// UpdateLike ...
+func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		input := new(model.Pet)
+		// パスパラメータ "id" の値を取得
+		id := c.Param("id")
+		if id == "" {
+			return c.JSON(http.StatusBadRequest, model.Response{
+				Message: "No id param found",
+			})
+		}
+
+		// Bindでリクエストの中身をiに詰める
+		input := new(struct {
+			UserId string `json:"user_id"`
+			Value  bool   `json:"value"`
+		})
 		if err = c.Bind(input); err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		err = handler.Interactor.UpdateFavoriteAttr(*input)
+		err = handler.Interactor.UpdateLikeCount(&model.InputUpdateLikeRequest{
+			PetId:  id,
+			UserId: input.UserId,
+			Value:  input.Value,
+		})
 		if err != nil {
 			return utils.GetErrorMassage(c, "en", err)
 		}
@@ -86,5 +102,28 @@ func (handler *PetHandler) UpdateFavoriteAttr() echo.HandlerFunc {
 			Code:    http.StatusOK,
 			Message: "OK",
 		})
+	}
+}
+
+func (handler *PetHandler) Reservation() echo.HandlerFunc {
+	return func(c echo.Context) (err error) {
+		petId := c.Param("id")
+		if petId == "" {
+			return c.JSON(http.StatusBadRequest, model.Response{
+				Message: "No id param found",
+			})
+		}
+
+		// Bindでリクエストの中身をinputにつめる
+		input := new(struct {
+			UserId          string `json:"user_id"`
+			Email           string `json:"email"`
+			FullName        string `json:"full_name"`
+			ReservationDate string `json:"reservation_date"`
+		})
+		if err = c.Bind(input); err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+
 	}
 }
