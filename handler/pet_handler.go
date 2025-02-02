@@ -16,6 +16,9 @@ type PetHandler struct {
 	Interactor usecase.PetInteractor
 }
 
+// ユーザごとのLikeを受け付けるインメモリDBを定義
+var likeDB = map[string]map[string]bool{}
+
 // NewPetHandler ...
 func NewPetHandler(sqlHandler database.SQLHandler) *PetHandler {
 	return &PetHandler{
@@ -39,30 +42,6 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 		// resの中身をJSONにして返却
 		resJSON := model.APIResponse{
 			Data: res,
-		}
-
-		return c.JSON(http.StatusOK, resJSON)
-	}
-}
-
-// CreateItem ...
-func (handler *PetHandler) CreateItem() echo.HandlerFunc {
-	return func(c echo.Context) (err error) {
-		input := new(model.Pet)
-		// Bindでリクエストの中身をiに詰める
-		if err = c.Bind(input); err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-		}
-
-		if input.Name == "" {
-			return c.JSON(http.StatusBadRequest, model.Response{
-				Message: "No name param found",
-			})
-		}
-
-		resJSON, err := handler.Interactor.CreateItem(input)
-		if err != nil {
-			return utils.GetErrorMassage(c, "en", err)
 		}
 
 		return c.JSON(http.StatusOK, resJSON)

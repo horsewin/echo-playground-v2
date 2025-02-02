@@ -38,7 +38,6 @@ func Router() *echo.Echo {
 		notificationHandler := handlers.NewNotificationHandler(sqlHandler)
 
 		e.GET("/v1/pets", petHandler.GetPets())
-		e.POST("/v1/pet", petHandler.CreateItem())
 		e.PUT("/v1/pets/:id/like", petHandler.UpdateLike())
 
 		e.GET("/v1/notifications", notificationHandler.GetNotifications())

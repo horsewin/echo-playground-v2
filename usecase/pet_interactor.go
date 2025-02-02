@@ -56,17 +56,6 @@ func (interactor *PetInteractor) GetPets(gender string) (pets []model.Pet, err e
 	return pets, nil
 }
 
-// CreateItem ...
-func (interactor *PetInteractor) CreateItem(input *model.Pet) (response model.Response, err error) {
-	response, err = interactor.PetRepository.Create(input)
-	if err != nil {
-		err = utils.SetErrorMassage("10001E")
-		return
-	}
-
-	return
-}
-
 // UpdateLikeCount ...
 func (interactor *PetInteractor) UpdateLikeCount(input *model.InputUpdateLikeRequest) (err error) {
 	whereClause := "id = :id"

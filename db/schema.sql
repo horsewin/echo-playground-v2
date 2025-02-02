@@ -25,11 +25,13 @@ CREATE TABLE IF NOT EXISTS reservations
     user_id        TEXT    NOT NULL,
     -- ユーザの氏名
     user_name      TEXT    NOT NULL,
+    -- ユーザのメールアドレス
+    email          TEXT    NOT NULL,
+    -- 見学予定日時
+    reservation_datetime TIMESTAMP NOT NULL,
     -- 予約対象のペットID
     -- petsテーブルのidを参照 (FK)
     pet_id         TEXT    NOT NULL REFERENCES pets (id) ON DELETE CASCADE,
-    -- 見学予定日時
-    reservation_datetime TIMESTAMP NOT NULL,
     -- 予約レコードが作られた日時
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- 予約レコードが更新された日時
