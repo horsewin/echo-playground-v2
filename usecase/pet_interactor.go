@@ -136,7 +136,7 @@ func (interactor *PetInteractor) UpdateLikeCount(input *model.InputUpdateLikeReq
 func (interactor *PetInteractor) CreateReservation(input *model.Reservation) (err error) {
 	err = interactor.ReservationRepository.Create(input)
 	if err != nil {
-		err = utils.SetErrorMassage("10001E")
+		err = utils.SetErrorMassage("10003E")
 		return
 	}
 	return

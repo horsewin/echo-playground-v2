@@ -3,16 +3,8 @@ package repository
 import (
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/interface/database"
+	"time"
 )
-
-type reservation struct {
-	ID              string `db:"id"`
-	PetId           string `db:"pet_id"`
-	UserId          string `db:"user_id"`
-	Email           string `db:"email"`
-	FullName        string `db:"full_name"`
-	ReservationDate string `db:"reservation_date"`
-}
 
 // ReservationRepositoryInterface ...
 type ReservationRepositoryInterface interface {
@@ -28,17 +20,20 @@ const ReservationTable = "reservations"
 
 // Create ...
 func (repo *ReservationRepository) Create(input *model.Reservation) (err error) {
-	// ドメインモデルをリポジトリモデルに変換
-	_reservation := reservation{
-		PetId:           input.PetId,
-		UserId:          input.UserId,
-		Email:           input.Email,
-		FullName:        input.FullName,
-		ReservationDate: input.ReservationDate,
+	// ドメインモデルをmapに変換
+	rsvDatetime, err := time.Parse("20060102", input.ReservationDate)
+	if err != nil {
+		return
 	}
 
-	// リポジトリモデルをmapに変換
-	in := map[string]interface{}{"pet_id": _reservation.PetId, "user_id": _reservation.UserId, "email": _reservation.Email, "full_name": _reservation.FullName, "reservation_date": _reservation.ReservationDate}
+	in := map[string]interface{}{
+		"pet_id":    input.PetId,
+		"user_id":   input.UserId,
+		"email":     input.Email,
+		"user_name": input.FullName,
+		// yyyymmdd形式をdatetimeに変換
+		"reservation_datetime": rsvDatetime,
+	}
 
 	// リポジトリモデルをDBに保存
 	err = repo.SQLHandler.Create(in, ReservationTable)
