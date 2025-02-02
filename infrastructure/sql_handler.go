@@ -122,19 +122,36 @@ func (handler *SQLHandler) Create(input map[string]interface{}, table string) er
 }
 
 // Update ...
-func (handler *SQLHandler) Update(in map[string]interface{}, table string, whereClause string, whereArgs map[string]interface{}) error {
+func (handler *SQLHandler) Update(in map[string]interface{}, table string, whereClause string) error {
 
-	columns, _, values := buildNamedParameters(in)
+	columns, placeholders, _ := buildNamedParameters(in)
 
 	setClauses := make([]string, len(columns))
 	for i, col := range columns {
-		setClauses[i] = fmt.Sprintf("%s = %v", col, values[col])
+		setClauses[i] = fmt.Sprintf("%s = %s", col, placeholders[i])
 	}
 
 	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", table, strings.Join(setClauses, ","), whereClause)
 	fmt.Println(query)
 
-	_, err := handler.Conn.NamedExec(query, whereArgs)
+	_, err := handler.Conn.NamedExec(query, in)
+
+	return err
+}
+
+// Delete ...
+func (handler *SQLHandler) Delete(in map[string]interface{}, table string) error {
+	columns, _, values := buildNamedParameters(in)
+
+	whereClauses := make([]string, len(columns))
+	for i, col := range columns {
+		whereClauses[i] = fmt.Sprintf("%s = %v", col, values[col])
+	}
+
+	query := fmt.Sprintf("DELETE FROM %s WHERE %s", table, strings.Join(whereClauses, ","))
+	fmt.Println(query)
+
+	_, err := handler.Conn.NamedExec(query, values)
 
 	return err
 }

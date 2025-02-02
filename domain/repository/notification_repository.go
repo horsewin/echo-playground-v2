@@ -43,6 +43,6 @@ func (repo *NotificationRepository) Count(query string, args map[string]interfac
 
 // Update ...
 func (repo *NotificationRepository) Update(in map[string]interface{}, query string, args map[string]interface{}) (err error) {
-	err = repo.SQLHandler.Update(in, NotificationTable, query, args)
+	//err = repo.SQLHandler.Update(in, NotificationTable, query, args)
 	return
 }

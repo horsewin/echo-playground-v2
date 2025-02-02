@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/labstack/echo/v4"
+	"net/http"
+	"regexp"
 )
 
 var messageConfig map[string]interface{}
@@ -41,6 +43,14 @@ func GetMessageMessage(lang string, messageCode string, args ...interface{}) str
 func GetErrorMassage(context interface{}, lang string, err1 error) (err error) {
 	c := context.(echo.Context)
 	messageCode := err1.Error()
+
+	// messageCodeが"数字5桁+E"の正規表現になっているかチェック
+	if !regexp.MustCompile(`\d{5}[IWE]`).Match([]byte(messageCode)) {
+		return c.JSON(http.StatusInternalServerError, &model.ErrorMessages{
+			Code:    string(http.StatusInternalServerError),
+			Message: "Unhandled internal server error",
+		})
+	}
 
 	errStatusCode := GetMessageStatusCode(messageCode)
 	errMessageCode := GetMessageMessageCode(messageCode)

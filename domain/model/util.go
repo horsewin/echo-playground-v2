@@ -7,7 +7,7 @@ type App struct {
 }
 
 type InputUpdateLikeRequest struct {
-	PetId  string `json:"petId"`
+	PetId  string `json:"pet_id"`
 	UserId string `json:"user_id"`
 	Value  bool   `json:"value"`
 }

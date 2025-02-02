@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/labstack/echo/v4"
-	"net/http"
 
 	"github.com/horsewin/echo-playground-v2/domain/repository"
 	"github.com/horsewin/echo-playground-v2/interface/database"
@@ -16,14 +17,17 @@ type PetHandler struct {
 	Interactor usecase.PetInteractor
 }
 
-// ユーザごとのLikeを受け付けるインメモリDBを定義
-var likeDB = map[string]map[string]bool{}
-
 // NewPetHandler ...
 func NewPetHandler(sqlHandler database.SQLHandler) *PetHandler {
 	return &PetHandler{
 		Interactor: usecase.PetInteractor{
 			PetRepository: &repository.PetRepository{
+				SQLHandler: sqlHandler,
+			},
+			ReservationRepository: &repository.ReservationRepository{
+				SQLHandler: sqlHandler,
+			},
+			FavoriteRepository: &repository.FavoriteRepository{
 				SQLHandler: sqlHandler,
 			},
 		},
@@ -68,6 +72,7 @@ func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
+		// UseCaseの実行
 		err = handler.Interactor.UpdateLikeCount(&model.InputUpdateLikeRequest{
 			PetId:  id,
 			UserId: input.UserId,
@@ -104,5 +109,21 @@ func (handler *PetHandler) Reservation() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
+		// UseCaseの実行
+		err = handler.Interactor.CreateReservation(&model.Reservation{
+			PetId:           petId,
+			UserId:          input.UserId,
+			Email:           input.Email,
+			FullName:        input.FullName,
+			ReservationDate: input.ReservationDate,
+		})
+		if err != nil {
+			return utils.GetErrorMassage(c, "en", err)
+		}
+
+		return c.JSON(http.StatusOK, model.Response{
+			Code:    http.StatusOK,
+			Message: "Created",
+		})
 	}
 }

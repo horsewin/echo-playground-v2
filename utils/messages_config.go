@@ -2,6 +2,14 @@ package utils
 
 // MessagesConfig ...
 var MessagesConfig = `{
+  "00001I": {
+    "statusCode": 200,
+    "messageCode": "00001I",
+    "message": {
+      "ja": "すでにお気に入り登録済みです。",
+      "en": "Already liked."
+    }
+  },
   "00001E": {
     "statusCode": 400,
     "messageCode": "00001E",
@@ -24,6 +32,22 @@ var MessagesConfig = `{
     "message": {
       "ja": "DBへのデータ取得時にエラーが発生しました。",
       "en": "DB select error."
+    }
+  },
+  "10002E": {
+    "statusCode": 500,
+    "messageCode": "10002E",
+    "message": {
+      "ja": "オブジェクトの変換に失敗しました。",
+      "en": "object mapping error."
+    }
+  },
+  "10003E": {
+    "statusCode": 500,
+    "messageCode": "10003E",
+    "message": {
+      "ja": "DBへのデータ保存時にエラーが発生しました。",
+      "en": "DB update error."
     }
   }
 }`

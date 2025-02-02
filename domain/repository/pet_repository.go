@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/interface/database"
 	"github.com/lib/pq"
 	"time"
@@ -32,7 +33,7 @@ type pets struct {
 type PetRepositoryInterface interface {
 	FindAll() (pets pets, err error)
 	Find(whereClause string, whereArgs map[string]interface{}) (pets pets, err error)
-	Update(in map[string]interface{}, query string, args map[string]interface{}) (err error)
+	Update(input *model.Pet) (err error)
 }
 
 // PetRepository ...
@@ -49,13 +50,34 @@ func (repo *PetRepository) FindAll() (pets pets, err error) {
 }
 
 // Find ...
-func (repo *PetRepository) Find(whereClause string, whereArgs map[string]interface{}) (pets pets, err error) {
-	err = repo.SQLHandler.Where(&pets.Data, PetsTable, whereClause, whereArgs)
+func (repo *PetRepository) Find(whereClause string, args map[string]interface{}) (pets pets, err error) {
+	err = repo.SQLHandler.Where(&pets.Data, PetsTable, whereClause, args)
 	return
 }
 
 // Update ...
-func (repo *PetRepository) Update(in map[string]interface{}, query string, args map[string]interface{}) (err error) {
-	err = repo.SQLHandler.Update(in, PetsTable, query, args)
+func (repo *PetRepository) Update(input *model.Pet) (err error) {
+	// Petドメインモデルをリポジトリモデルに変換
+	now := time.Now()
+	in := map[string]interface{}{
+		"id":               input.ID,
+		"name":             input.Name,
+		"breed":            input.Breed,
+		"gender":           input.Gender,
+		"price":            input.Price,
+		"image_url":        input.ImageURL,
+		"likes":            input.Likes,
+		"shop_name":        input.Shop.Name,
+		"shop_location":    input.Shop.Location,
+		"birth_date":       input.BirthDate,
+		"reference_number": input.ReferenceNumber,
+		"tags":             pq.StringArray(input.Tags),
+		"updated_at":       &now,
+	}
+
+	// クエリ組み立て
+	whereClause := "id = :id"
+
+	err = repo.SQLHandler.Update(in, PetsTable, whereClause)
 	return
 }
