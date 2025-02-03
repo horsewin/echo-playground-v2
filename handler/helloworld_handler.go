@@ -23,11 +23,9 @@ func (handler *HelloWorldHandler) SayHelloWorld() echo.HandlerFunc {
 	}
 
 	// ドメインモデルをJSONにして返却
-	json := model.APIResponse{
-		Data: body,
-	}
-
 	return func(c echo.Context) error {
-		return c.JSON(http.StatusOK, json)
+		return c.JSON(http.StatusOK, model.APIResponse{
+			Data: body,
+		})
 	}
 }

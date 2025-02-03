@@ -1,10 +1,9 @@
 package handlers
 
 import (
-	"net/http"
-
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/labstack/echo/v4"
+	"net/http"
 
 	"github.com/horsewin/echo-playground-v2/domain/repository"
 	"github.com/horsewin/echo-playground-v2/interface/database"
@@ -37,8 +36,12 @@ func NewPetHandler(sqlHandler database.SQLHandler) *PetHandler {
 // GetPets ...
 func (handler *PetHandler) GetPets() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		gender := c.QueryParam("gender")
-		res, err := handler.Interactor.GetPets(gender)
+		filter := new(model.PetFilter)
+		if err := c.Bind(filter); err != nil {
+			return err
+		}
+
+		res, err := handler.Interactor.GetPets(filter)
 		if err != nil {
 			return utils.GetErrorMassage(c, "en", err)
 		}
@@ -89,8 +92,10 @@ func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 	}
 }
 
+// Reservation ...
 func (handler *PetHandler) Reservation() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
+		// パスパラメータ "id" の値を取得
 		petId := c.Param("id")
 		if petId == "" {
 			return c.JSON(http.StatusBadRequest, model.Response{

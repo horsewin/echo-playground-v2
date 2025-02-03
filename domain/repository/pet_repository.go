@@ -4,8 +4,11 @@ import (
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/interface/database"
 	"github.com/lib/pq"
+	"strings"
 	"time"
 )
+
+const PetsTable = "pets"
 
 // pet... pets テーブルの各カラムと対応する構造体
 type pet struct {
@@ -31,8 +34,7 @@ type pets struct {
 
 // PetRepositoryInterface ...
 type PetRepositoryInterface interface {
-	FindAll() (pets pets, err error)
-	Find(whereClause string, whereArgs map[string]interface{}) (pets pets, err error)
+	Find(filter *model.PetFilter) (pets pets, err error)
 	Update(input *model.Pet) (err error)
 }
 
@@ -41,17 +43,14 @@ type PetRepository struct {
 	database.SQLHandler
 }
 
-const PetsTable = "pets"
-
-// FindAll ...
-func (repo *PetRepository) FindAll() (pets pets, err error) {
-	err = repo.SQLHandler.Scan(&pets.Data, PetsTable, "id desc")
-	return pets, err
-}
-
 // Find ...
-func (repo *PetRepository) Find(whereClause string, args map[string]interface{}) (pets pets, err error) {
-	err = repo.SQLHandler.Where(&pets.Data, PetsTable, whereClause, args)
+func (repo *PetRepository) Find(filter *model.PetFilter) (pets pets, err error) {
+	// フィルタ条件をリポジトリで解釈する型に変換
+	whereClause, args := parseFilter(filter)
+
+	// インフラストラクチャレイヤの処理を実行
+	err = repo.SQLHandler.Where(&pets.Data, PetsTable, strings.Join(whereClause, " and "), args)
+
 	return
 }
 
@@ -80,4 +79,43 @@ func (repo *PetRepository) Update(input *model.Pet) (err error) {
 
 	err = repo.SQLHandler.Update(in, PetsTable, whereClause)
 	return
+}
+
+// parseFilter ... フィルタ条件を解釈してクエリ条件とバインド変数を返す
+func parseFilter(filter *model.PetFilter) ([]string, map[string]interface{}) {
+	args := map[string]interface{}{}
+	whereClause := make([]string, 0)
+
+	if filter != nil {
+		if filter.Gender != "" {
+			if strings.EqualFold(filter.Gender, "male") {
+				whereClause = append(whereClause, "gender = :gender")
+				args["gender"] = "Male"
+			} else if strings.EqualFold(filter.Gender, "female") {
+				whereClause = append(whereClause, "gender = :gender")
+				args["gender"] = "Female"
+			}
+		}
+		if filter.Price != 0 {
+			whereClause = append(whereClause, "price = :price")
+			args["price"] = filter.Price
+		}
+		if filter.Name != "" {
+			whereClause = append(whereClause, "name = :name")
+			args["name"] = filter.Name
+		}
+		if filter.ID != "" {
+			whereClause = append(whereClause, "id = :id")
+			args["id"] = filter.ID
+		}
+		if filter.ReferenceNumber != "" {
+			whereClause = append(whereClause, "reference_number = :reference_number")
+			args["reference_number"] = filter.ReferenceNumber
+		}
+		if filter.Breed != "" {
+			whereClause = append(whereClause, "breed = :breed")
+			args["breed"] = filter.Breed
+		}
+	}
+	return whereClause, args
 }

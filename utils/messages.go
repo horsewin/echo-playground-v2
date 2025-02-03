@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"regexp"
+	"strconv"
 )
 
 var messageConfig map[string]interface{}
@@ -47,7 +48,7 @@ func GetErrorMassage(context interface{}, lang string, err1 error) (err error) {
 	// messageCodeが"数字5桁+E"の正規表現になっているかチェック
 	if !regexp.MustCompile(`\d{5}[IWE]`).Match([]byte(messageCode)) {
 		return c.JSON(http.StatusInternalServerError, &model.ErrorMessages{
-			Code:    string(http.StatusInternalServerError),
+			Code:    strconv.Itoa(http.StatusInternalServerError),
 			Message: "Unhandled internal server error",
 		})
 	}

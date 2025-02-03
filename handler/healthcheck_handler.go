@@ -15,7 +15,6 @@ func NewHealthCheckHandler() *HealthCheckHandler {
 
 // HealthCheck ...
 func (handler *HealthCheckHandler) HealthCheck() echo.HandlerFunc {
-
 	return func(c echo.Context) error {
 		return c.JSON(200, nil)
 	}

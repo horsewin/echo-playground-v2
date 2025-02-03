@@ -28,10 +28,11 @@ func Router() *echo.Echo {
 
 	healthCheckHandler := handlers.NewHealthCheckHandler()
 	helloWorldHandler := handlers.NewHelloWorldHandler()
+
+	// APIルートの定義
 	e.GET("/", healthCheckHandler.HealthCheck())
 	e.GET("/healthcheck", healthCheckHandler.HealthCheck())
 	e.GET("/v1/helloworld", helloWorldHandler.SayHelloWorld())
-
 	if os.Getenv("DB_CONN") == "1" {
 		sqlHandler := NewSQLHandler()
 		petHandler := handlers.NewPetHandler(sqlHandler)

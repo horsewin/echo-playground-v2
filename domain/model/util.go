@@ -22,3 +22,13 @@ type Response struct {
 type APIResponse struct {
 	Data interface{} `json:"data"`
 }
+
+// PetFilter ... フィルタ
+type PetFilter struct {
+	ID              string  `query:"id"`
+	Name            string  `query:"name"`
+	Breed           string  `query:"breed"`
+	Gender          string  `query:"gender"`
+	Price           float64 `query:"price"`
+	ReferenceNumber string  `query:"reference_number"`
+}

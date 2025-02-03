@@ -15,22 +15,9 @@ type PetInteractor struct {
 }
 
 // GetPets ...
-func (interactor *PetInteractor) GetPets(gender string) (pets []model.Pet, err error) {
-	var query string
-	var args map[string]interface{}
-	if gender == "male" {
-		query = "gender = :gender"
-		args = map[string]interface{}{"gender": "male"}
-	} else if gender == "female" {
-		query = "gender = :gender"
-		args = map[string]interface{}{"gender": "female"}
-	} else {
-		query = ""
-		args = map[string]interface{}{}
-	}
-
+func (interactor *PetInteractor) GetPets(filter *model.PetFilter) (pets []model.Pet, err error) {
 	// Repository層からデータを取得
-	_app, err := interactor.PetRepository.Find(query, args)
+	_app, err := interactor.PetRepository.Find(filter)
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")
 		return
@@ -73,7 +60,7 @@ func (interactor *PetInteractor) UpdateLikeCount(input *model.InputUpdateLikeReq
 	}
 
 	// 現在のペットモデルを取得
-	petData, err := interactor.PetRepository.Find("id = :id", map[string]interface{}{"id": input.PetId})
+	petData, err := interactor.PetRepository.Find(&model.PetFilter{ID: input.PetId})
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")
 		return
@@ -133,6 +120,7 @@ func (interactor *PetInteractor) UpdateLikeCount(input *model.InputUpdateLikeReq
 	return
 }
 
+// CreateReservation ...
 func (interactor *PetInteractor) CreateReservation(input *model.Reservation) (err error) {
 	err = interactor.ReservationRepository.Create(input)
 	if err != nil {
