@@ -27,7 +27,7 @@ func main() {
 	// Start server
 	go func() {
 		if os.Getenv(envTLSCert) == "" || os.Getenv(envTLSKey) == "" {
-			router.Logger.Fatal(router.Start(":80"))
+			router.Logger.Fatal(router.Start(":8081"))
 		} else {
 			router.Logger.Fatal(router.StartTLS(":443",
 				os.Getenv(envTLSCert), os.Getenv(envTLSKey)))
