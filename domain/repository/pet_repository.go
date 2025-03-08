@@ -1,11 +1,15 @@
 package repository
 
 import (
-	"github.com/horsewin/echo-playground-v2/domain/model"
-	"github.com/horsewin/echo-playground-v2/interface/database"
-	"github.com/lib/pq"
+	"context"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-xray-sdk-go/xray"
+	"github.com/horsewin/echo-playground-v2/domain/model"
+	"github.com/horsewin/echo-playground-v2/interface/database"
+	"github.com/horsewin/echo-playground-v2/utils"
+	"github.com/lib/pq"
 )
 
 const PetsTable = "pets"
@@ -34,8 +38,8 @@ type pets struct {
 
 // PetRepositoryInterface ...
 type PetRepositoryInterface interface {
-	Find(filter *model.PetFilter) (pets pets, err error)
-	Update(input *model.Pet) (err error)
+	Find(ctx context.Context, filter *model.PetFilter) (pets pets, err error)
+	Update(ctx context.Context, input *model.Pet) (err error)
 }
 
 // PetRepository ...
@@ -44,18 +48,49 @@ type PetRepository struct {
 }
 
 // Find ...
-func (repo *PetRepository) Find(filter *model.PetFilter) (pets pets, err error) {
+func (repo *PetRepository) Find(ctx context.Context, filter *model.PetFilter) (pets pets, err error) {
+	// サブセグメントを作成
+	_, seg := xray.BeginSubsegment(ctx, "PetRepository.Find")
+	defer seg.Close(err)
+
 	// フィルタ条件をリポジトリで解釈する型に変換
 	whereClause, args := parseFilter(filter)
 
+	// メタデータを追加
+	if err := seg.AddMetadata("filter", filter); err != nil {
+		utils.LogError("Failed to add filter metadata: %v", err)
+	}
+	if err := seg.AddMetadata("where_clause", whereClause); err != nil {
+		utils.LogError("Failed to add where_clause metadata: %v", err)
+	}
+	if err := seg.AddMetadata("args", args); err != nil {
+		utils.LogError("Failed to add args metadata: %v", err)
+	}
+
 	// インフラストラクチャレイヤの処理を実行
 	err = repo.SQLHandler.Where(&pets.Data, PetsTable, strings.Join(whereClause, " and "), args)
+
+	// 結果のメタデータを追加
+	if err == nil {
+		if err := seg.AddMetadata("result_count", len(pets.Data)); err != nil {
+			utils.LogError("Failed to add result_count metadata: %v", err)
+		}
+	}
 
 	return
 }
 
 // Update ...
-func (repo *PetRepository) Update(input *model.Pet) (err error) {
+func (repo *PetRepository) Update(ctx context.Context, input *model.Pet) (err error) {
+	// サブセグメントを作成
+	_, seg := xray.BeginSubsegment(ctx, "PetRepository.Update")
+	defer seg.Close(err)
+
+	// メタデータを追加
+	if err := seg.AddMetadata("pet_id", input.ID); err != nil {
+		utils.LogError("Failed to add pet_id metadata: %v", err)
+	}
+
 	// Petドメインモデルをリポジトリモデルに変換
 	now := time.Now()
 	in := map[string]interface{}{
@@ -77,7 +112,9 @@ func (repo *PetRepository) Update(input *model.Pet) (err error) {
 	// クエリ組み立て
 	whereClause := "id = :id"
 
+	// SQLHandlerを呼び出し
 	err = repo.SQLHandler.Update(in, PetsTable, whereClause)
+
 	return
 }
 
