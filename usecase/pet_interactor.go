@@ -20,7 +20,7 @@ type PetInteractor struct {
 // GetPets ...
 func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetFilter) (pets []model.Pet, err error) {
 	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "PetInteractor.GetPets")
+	ctx, seg := xray.BeginSubsegment(ctx, "PetInteractor.GetPets")
 	defer seg.Close(err)
 
 	// メタデータを追加
@@ -68,7 +68,7 @@ func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetF
 // UpdateLikeCount ...
 func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *model.InputUpdateLikeRequest) (err error) {
 	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "PetInteractor.UpdateLikeCount")
+	ctx, seg := xray.BeginSubsegment(ctx, "PetInteractor.UpdateLikeCount")
 	defer seg.Close(err)
 
 	// メタデータを追加
@@ -151,7 +151,7 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 // CreateReservation ...
 func (interactor *PetInteractor) CreateReservation(ctx context.Context, input *model.Reservation) (err error) {
 	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "PetInteractor.CreateReservation")
+	ctx, seg := xray.BeginSubsegment(ctx, "PetInteractor.CreateReservation")
 	defer seg.Close(err)
 
 	// メタデータを追加
