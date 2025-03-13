@@ -26,8 +26,10 @@ func (handler *HelloWorldHandler) SayHelloWorld() echo.HandlerFunc {
 
 	// ドメインモデルをJSONにして返却
 	return func(c echo.Context) error {
-		// Create a segment for X-Ray tracing
-		_, seg := xray.BeginSegment(c.Request().Context(), "SayHelloWorld")
+		// ルーターで作成されたセグメントを使用するためにBeginSegmentは不要
+		// 代わりにサブセグメントを作成
+		ctx := c.Request().Context()
+		_, seg := xray.BeginSubsegment(ctx, "SayHelloWorld")
 		defer seg.Close(nil) // エラーがない場合はnilを渡す
 
 		// Add metadata to the segment

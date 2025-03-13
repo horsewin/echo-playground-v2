@@ -38,8 +38,10 @@ func NewPetHandler(sqlHandler database.SQLHandler) *PetHandler {
 // GetPets ...
 func (handler *PetHandler) GetPets() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// Create a segment for X-Ray tracing
-		ctx, seg := xray.BeginSegment(c.Request().Context(), "GetPets")
+		// ルーターで作成されたセグメントを使用するためにBeginSegmentは不要
+		// 代わりにサブセグメントを作成
+		ctx := c.Request().Context()
+		_, seg := xray.BeginSubsegment(ctx, "GetPets")
 		defer seg.Close(err)
 
 		filter := new(model.PetFilter)
@@ -73,8 +75,10 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 // UpdateLike ...
 func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// Create a segment for X-Ray tracing
-		ctx, seg := xray.BeginSegment(c.Request().Context(), "UpdateLike")
+		// ルーターで作成されたセグメントを使用するためにBeginSegmentは不要
+		// 代わりにサブセグメントを作成
+		ctx := c.Request().Context()
+		_, seg := xray.BeginSubsegment(ctx, "UpdateLike")
 		defer seg.Close(err)
 
 		// パスパラメータ "id" の値を取得
@@ -126,8 +130,10 @@ func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 // Reservation ...
 func (handler *PetHandler) Reservation() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// Create a segment for X-Ray tracing
-		ctx, seg := xray.BeginSegment(c.Request().Context(), "Reservation")
+		// ルーターで作成されたセグメントを使用するためにBeginSegmentは不要
+		// 代わりにサブセグメントを作成
+		ctx := c.Request().Context()
+		_, seg := xray.BeginSubsegment(ctx, "Reservation")
 		defer seg.Close(err)
 
 		// パスパラメータ "id" の値を取得

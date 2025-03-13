@@ -43,6 +43,8 @@ func NewSQLHandler() *SQLHandler {
 		PROTOCOL := "host=" + os.Getenv("DB_HOST") + " port=5432"
 		CONNECT := "user=" + USER + " password=" + PASS + " " + PROTOCOL + " dbname=" + DBNAME + " sslmode=disable"
 
+		// X-Ray対応のSQLコンテキストを作成
+		// 注意: この時点ではコンテキストがないため、実際のトレースはリクエスト処理時に行われる
 		db, err := xray.SQLContext("postgres", CONNECT)
 		if err != nil {
 			log.Fatalf("Error: No database connection established: %v", err)

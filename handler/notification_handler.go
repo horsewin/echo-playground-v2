@@ -32,8 +32,10 @@ func NewNotificationHandler(sqlHandler database.SQLHandler) *NotificationHandler
 // GetNotifications ...
 func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// Create a segment for X-Ray tracing
-		ctx, seg := xray.BeginSegment(c.Request().Context(), "GetNotifications")
+		// ルーターで作成されたセグメントを使用するためにBeginSegmentは不要
+		// 代わりにサブセグメントを作成
+		ctx := c.Request().Context()
+		_, seg := xray.BeginSubsegment(ctx, "GetNotifications")
 		defer seg.Close(err)
 
 		id := c.QueryParam("id")
@@ -56,8 +58,10 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 // GetUnreadNotificationCount ...
 func (handler *NotificationHandler) GetUnreadNotificationCount() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// Create a segment for X-Ray tracing
-		ctx, seg := xray.BeginSegment(c.Request().Context(), "GetUnreadNotificationCount")
+		// ルーターで作成されたセグメントを使用するためにBeginSegmentは不要
+		// 代わりにサブセグメントを作成
+		ctx := c.Request().Context()
+		_, seg := xray.BeginSubsegment(ctx, "GetUnreadNotificationCount")
 		defer seg.Close(err)
 
 		// contextを渡す
@@ -73,8 +77,10 @@ func (handler *NotificationHandler) GetUnreadNotificationCount() echo.HandlerFun
 // PostNotificationsRead ...
 func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// Create a segment for X-Ray tracing
-		ctx, seg := xray.BeginSegment(c.Request().Context(), "PostNotificationsRead")
+		// ルーターで作成されたセグメントを使用するためにBeginSegmentは不要
+		// 代わりにサブセグメントを作成
+		ctx := c.Request().Context()
+		_, seg := xray.BeginSubsegment(ctx, "PostNotificationsRead")
 		defer seg.Close(err)
 
 		// contextを渡す
