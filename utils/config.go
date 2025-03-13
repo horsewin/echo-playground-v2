@@ -15,7 +15,6 @@ type APIConfig struct {
 type ConfigDB struct {
 	Postgres struct {
 		DBMS     string
-		Protocol string
 		Username string
 		Password string
 		DBName   string
@@ -35,7 +34,6 @@ func NewConfigDB() *ConfigDB {
 	config := new(ConfigDB)
 
 	config.Postgres.DBMS = "postgres"
-	config.Postgres.Protocol = "tcp(" + os.Getenv("DB_HOST") + ":3306)"
 	config.Postgres.Username = os.Getenv("DB_USERNAME")
 	config.Postgres.Password = os.Getenv("DB_PASSWORD")
 	config.Postgres.DBName = os.Getenv("DB_NAME")
