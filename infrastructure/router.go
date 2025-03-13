@@ -35,15 +35,33 @@ func Router() *echo.Echo {
 	})
 	e.Use(logger)
 	e.Use(middleware.Recover())
-	// X-Rayミドルウェアを追加
+
+	// X-Rayミドルウェアを追加（修正版）
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx, seg := xray.BeginSegment(c.Request().Context(), "echo-playground-v2")
-			c.SetRequest(c.Request().WithContext(ctx))
+			println("x-ray middleware")
+			req := c.Request()
+			res := c.Response()
+
+			// リクエストごとに新しいセグメントを作成
+			ctx, seg := xray.BeginSegment(req.Context(), "echo-playground-v2")
 			defer seg.Close(nil)
-			return next(c)
+
+			// リクエストのコンテキストを更新
+			c.SetRequest(req.WithContext(ctx))
+
+			// 次のハンドラーを呼び出し
+			err := next(c)
+
+			// レスポンスステータスをセグメントに記録
+			if addErr := seg.AddMetadata("response_status", res.Status); addErr != nil {
+				c.Logger().Errorf("Failed to add response_status metadata: %v", addErr)
+			}
+
+			return err
 		}
 	})
+
 	e.Logger.SetLevel(log.INFO)
 	e.HideBanner = true
 	e.HidePort = false

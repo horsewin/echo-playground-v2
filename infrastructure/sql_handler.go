@@ -70,6 +70,11 @@ func NewSQLHandler() *SQLHandler {
 func (handler *SQLHandler) Where(ctx context.Context, out interface{}, table string, whereClause string, whereArgs map[string]interface{}) error {
 	// X-Rayサブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Where")
+	if seg == nil {
+		// セグメントが作成できない場合はログに記録して処理を続行
+		utils.LogError("Failed to begin subsegment: SQLHandler.Where")
+		return handler.whereWithoutXRay(out, table, whereClause, whereArgs)
+	}
 	defer seg.Close(nil)
 
 	query := fmt.Sprintf("SELECT * FROM %s", table)
@@ -102,10 +107,30 @@ func (handler *SQLHandler) Where(ctx context.Context, out interface{}, table str
 	return err
 }
 
+// whereWithoutXRay はX-Rayなしでクエリを実行するためのヘルパーメソッド
+func (handler *SQLHandler) whereWithoutXRay(out interface{}, table string, whereClause string, whereArgs map[string]interface{}) error {
+	query := fmt.Sprintf("SELECT * FROM %s", table)
+	if whereClause != "" {
+		query += fmt.Sprintf(" WHERE %s", whereClause)
+	}
+
+	stmt, err := handler.Conn.PrepareNamed(query)
+	if err != nil {
+		return err
+	}
+
+	return stmt.Select(out, whereArgs)
+}
+
 // Scan ...
 func (handler *SQLHandler) Scan(ctx context.Context, out interface{}, table string, order string) error {
 	// X-Rayサブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Scan")
+	if seg == nil {
+		// セグメントが作成できない場合はログに記録して処理を続行
+		utils.LogError("Failed to begin subsegment: SQLHandler.Scan")
+		return handler.scanWithoutXRay(out, table, order)
+	}
 	defer seg.Close(nil)
 
 	query := fmt.Sprintf("SELECT * FROM %s ORDER BY %s;", table, order)
@@ -124,10 +149,21 @@ func (handler *SQLHandler) Scan(ctx context.Context, out interface{}, table stri
 	return err
 }
 
+// scanWithoutXRay はX-Rayなしでクエリを実行するためのヘルパーメソッド
+func (handler *SQLHandler) scanWithoutXRay(out interface{}, table string, order string) error {
+	query := fmt.Sprintf("SELECT * FROM %s ORDER BY %s;", table, order)
+	return handler.Conn.Select(out, query)
+}
+
 // Count ...
 func (handler *SQLHandler) Count(ctx context.Context, out *int, table string, whereClause string, whereArgs map[string]interface{}) error {
 	// X-Rayサブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Count")
+	if seg == nil {
+		// セグメントが作成できない場合はログに記録して処理を続行
+		utils.LogError("Failed to begin subsegment: SQLHandler.Count")
+		return handler.countWithoutXRay(out, table, whereClause, whereArgs)
+	}
 	defer seg.Close(nil)
 
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
@@ -162,10 +198,33 @@ func (handler *SQLHandler) Count(ctx context.Context, out *int, table string, wh
 	return err
 }
 
+// countWithoutXRay はX-Rayなしでクエリを実行するためのヘルパーメソッド
+func (handler *SQLHandler) countWithoutXRay(out *int, table string, whereClause string, whereArgs map[string]interface{}) error {
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
+	if whereClause != "" {
+		query += fmt.Sprintf(" WHERE %s", whereClause)
+	}
+
+	var count int
+	stmt, err := handler.Conn.PrepareNamed(query)
+	if err != nil {
+		return err
+	}
+
+	err = stmt.Get(&count, whereArgs)
+	*out = count
+	return err
+}
+
 // Create ...
 func (handler *SQLHandler) Create(ctx context.Context, input map[string]interface{}, table string) error {
 	// X-Rayサブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Create")
+	if seg == nil {
+		// セグメントが作成できない場合はログに記録して処理を続行
+		utils.LogError("Failed to begin subsegment: SQLHandler.Create")
+		return handler.createWithoutXRay(input, table)
+	}
 	defer seg.Close(nil)
 
 	// カラム名とプレースホルダーを構築
@@ -204,10 +263,40 @@ func (handler *SQLHandler) Create(ctx context.Context, input map[string]interfac
 	return err
 }
 
+// createWithoutXRay はX-Rayなしでクエリを実行するためのヘルパーメソッド
+func (handler *SQLHandler) createWithoutXRay(input map[string]interface{}, table string) error {
+	// カラム名とプレースホルダーを構築
+	columns := make([]string, 0)
+	placeholders := make([]string, 0)
+
+	// inputのキーと値をそれぞれ列と値に追加
+	for key := range input {
+		// IDが設定されていても無視する
+		if key == "id" {
+			continue
+		}
+
+		columns = append(columns, key)
+		placeholders = append(placeholders, fmt.Sprintf(":%s", key)) // プレースホルダーを使う
+	}
+
+	// クエリを構築
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, strings.Join(columns, ","), strings.Join(placeholders, ","))
+
+	fmt.Println(query)
+	_, err := handler.Conn.NamedExec(query, input)
+	return err
+}
+
 // Update ...
 func (handler *SQLHandler) Update(ctx context.Context, in map[string]interface{}, table string, whereClause string) error {
 	// X-Rayサブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Update")
+	if seg == nil {
+		// セグメントが作成できない場合はログに記録して処理を続行
+		utils.LogError("Failed to begin subsegment: SQLHandler.Update")
+		return handler.updateWithoutXRay(in, table, whereClause)
+	}
 	defer seg.Close(nil)
 
 	columns, placeholders, _ := buildNamedParameters(in)
@@ -239,10 +328,32 @@ func (handler *SQLHandler) Update(ctx context.Context, in map[string]interface{}
 	return err
 }
 
+// updateWithoutXRay はX-Rayなしでクエリを実行するためのヘルパーメソッド
+func (handler *SQLHandler) updateWithoutXRay(in map[string]interface{}, table string, whereClause string) error {
+	columns, placeholders, _ := buildNamedParameters(in)
+
+	setClauses := make([]string, len(columns))
+	for i, col := range columns {
+		setClauses[i] = fmt.Sprintf("%s = %s", col, placeholders[i])
+	}
+
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", table, strings.Join(setClauses, ","), whereClause)
+
+	fmt.Println(query)
+
+	_, err := handler.Conn.NamedExec(query, in)
+	return err
+}
+
 // Delete ...
 func (handler *SQLHandler) Delete(ctx context.Context, in map[string]interface{}, table string) error {
 	// X-Rayサブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Delete")
+	if seg == nil {
+		// セグメントが作成できない場合はログに記録して処理を続行
+		utils.LogError("Failed to begin subsegment: SQLHandler.Delete")
+		return handler.deleteWithoutXRay(in, table)
+	}
 	defer seg.Close(nil)
 
 	columns, _, values := buildNamedParameters(in)
@@ -271,6 +382,23 @@ func (handler *SQLHandler) Delete(ctx context.Context, in map[string]interface{}
 		}
 	}
 
+	return err
+}
+
+// deleteWithoutXRay はX-Rayなしでクエリを実行するためのヘルパーメソッド
+func (handler *SQLHandler) deleteWithoutXRay(in map[string]interface{}, table string) error {
+	columns, _, values := buildNamedParameters(in)
+
+	whereClauses := make([]string, len(columns))
+	for i, col := range columns {
+		whereClauses[i] = fmt.Sprintf("%s = %v", col, values[col])
+	}
+
+	query := fmt.Sprintf("DELETE FROM %s WHERE %s", table, strings.Join(whereClauses, ","))
+
+	fmt.Println(query)
+
+	_, err := handler.Conn.NamedExec(query, values)
 	return err
 }
 

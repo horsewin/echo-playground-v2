@@ -38,10 +38,31 @@ func NewPetHandler(sqlHandler database.SQLHandler) *PetHandler {
 // GetPets ...
 func (handler *PetHandler) GetPets() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// ルーターで作成されたセグメントを使用するためにBeginSegmentは不要
-		// 代わりにサブセグメントを作成
+		// サブセグメントを作成
 		ctx := c.Request().Context()
 		_, seg := xray.BeginSubsegment(ctx, "GetPets")
+		if seg == nil {
+			// セグメントが作成できない場合はログに記録して処理を続行
+			c.Logger().Warn("Failed to begin subsegment: GetPets")
+
+			filter := new(model.PetFilter)
+			if err := c.Bind(filter); err != nil {
+				return err
+			}
+
+			// Pass the context with X-Ray segment to the interactor
+			res, err := handler.Interactor.GetPets(ctx, filter)
+			if err != nil {
+				return utils.GetErrorMassage(c, "en", err)
+			}
+
+			// resの中身をJSONにして返却
+			resJSON := model.APIResponse{
+				Data: res,
+			}
+
+			return c.JSON(http.StatusOK, resJSON)
+		}
 		defer seg.Close(err)
 
 		filter := new(model.PetFilter)
@@ -75,10 +96,46 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 // UpdateLike ...
 func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// ルーターで作成されたセグメントを使用するためにBeginSegmentは不要
-		// 代わりにサブセグメントを作成
+		// サブセグメントを作成
 		ctx := c.Request().Context()
 		_, seg := xray.BeginSubsegment(ctx, "UpdateLike")
+		if seg == nil {
+			// セグメントが作成できない場合はログに記録して処理を続行
+			c.Logger().Warn("Failed to begin subsegment: UpdateLike")
+
+			// パスパラメータ "id" の値を取得
+			id := c.Param("id")
+			if id == "" {
+				return c.JSON(http.StatusBadRequest, model.Response{
+					Message: "No id param found",
+				})
+			}
+
+			// Bindでリクエストの中身をiに詰める
+			input := new(struct {
+				UserId string `json:"user_id"`
+				Value  bool   `json:"value"`
+			})
+			if err = c.Bind(input); err != nil {
+				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			}
+
+			// UseCaseの実行
+			err = handler.Interactor.UpdateLikeCount(ctx, &model.InputUpdateLikeRequest{
+				PetId:  id,
+				UserId: input.UserId,
+				Value:  input.Value,
+			})
+
+			if err != nil {
+				return utils.GetErrorMassage(c, "en", err)
+			}
+
+			return c.JSON(http.StatusOK, model.Response{
+				Code:    http.StatusOK,
+				Message: "OK",
+			})
+		}
 		defer seg.Close(err)
 
 		// パスパラメータ "id" の値を取得
@@ -130,10 +187,50 @@ func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 // Reservation ...
 func (handler *PetHandler) Reservation() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// ルーターで作成されたセグメントを使用するためにBeginSegmentは不要
-		// 代わりにサブセグメントを作成
+		// サブセグメントを作成
 		ctx := c.Request().Context()
 		_, seg := xray.BeginSubsegment(ctx, "Reservation")
+		if seg == nil {
+			// セグメントが作成できない場合はログに記録して処理を続行
+			c.Logger().Warn("Failed to begin subsegment: Reservation")
+
+			// パスパラメータ "id" の値を取得
+			petId := c.Param("id")
+			if petId == "" {
+				return c.JSON(http.StatusBadRequest, model.Response{
+					Message: "No id param found",
+				})
+			}
+
+			// Bindでリクエストの中身をinputにつめる
+			input := new(struct {
+				UserId          string `json:"user_id"`
+				Email           string `json:"email"`
+				FullName        string `json:"full_name"`
+				ReservationDate string `json:"reservation_date"`
+			})
+			if err = c.Bind(input); err != nil {
+				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			}
+
+			// UseCaseの実行
+			err = handler.Interactor.CreateReservation(ctx, &model.Reservation{
+				PetId:           petId,
+				UserId:          input.UserId,
+				Email:           input.Email,
+				FullName:        input.FullName,
+				ReservationDate: input.ReservationDate,
+			})
+
+			if err != nil {
+				return utils.GetErrorMassage(c, "en", err)
+			}
+
+			return c.JSON(http.StatusOK, model.Response{
+				Code:    http.StatusOK,
+				Message: "Created",
+			})
+		}
 		defer seg.Close(err)
 
 		// パスパラメータ "id" の値を取得
