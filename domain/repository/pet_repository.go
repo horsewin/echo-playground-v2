@@ -68,7 +68,7 @@ func (repo *PetRepository) Find(ctx context.Context, filter *model.PetFilter) (p
 	}
 
 	// インフラストラクチャレイヤの処理を実行
-	err = repo.SQLHandler.Where(&pets.Data, PetsTable, strings.Join(whereClause, " and "), args)
+	err = repo.SQLHandler.Where(ctx, &pets.Data, PetsTable, strings.Join(whereClause, " and "), args)
 
 	// 結果のメタデータを追加
 	if err == nil {
@@ -113,7 +113,7 @@ func (repo *PetRepository) Update(ctx context.Context, input *model.Pet) (err er
 	whereClause := "id = :id"
 
 	// SQLHandlerを呼び出し
-	err = repo.SQLHandler.Update(in, PetsTable, whereClause)
+	err = repo.SQLHandler.Update(ctx, in, PetsTable, whereClause)
 
 	return
 }

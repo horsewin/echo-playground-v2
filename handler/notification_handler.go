@@ -33,7 +33,7 @@ func NewNotificationHandler(sqlHandler database.SQLHandler) *NotificationHandler
 func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// Create a segment for X-Ray tracing
-		_, seg := xray.BeginSegment(c.Request().Context(), "GetNotifications")
+		ctx, seg := xray.BeginSegment(c.Request().Context(), "GetNotifications")
 		defer seg.Close(err)
 
 		id := c.QueryParam("id")
@@ -43,8 +43,8 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 			c.Logger().Errorf("Failed to add id metadata: %v", err)
 		}
 
-		// NotificationInteractorにもcontextを渡せるように修正が必要
-		resJSON, err := handler.Interactor.GetNotifications(id)
+		// contextを渡す
+		resJSON, err := handler.Interactor.GetNotifications(ctx, id)
 		if err != nil {
 			return utils.GetErrorMassage(c, "en", err)
 		}
@@ -57,11 +57,11 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 func (handler *NotificationHandler) GetUnreadNotificationCount() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// Create a segment for X-Ray tracing
-		_, seg := xray.BeginSegment(c.Request().Context(), "GetUnreadNotificationCount")
+		ctx, seg := xray.BeginSegment(c.Request().Context(), "GetUnreadNotificationCount")
 		defer seg.Close(err)
 
-		// NotificationInteractorにもcontextを渡せるように修正が必要
-		resJSON, err := handler.Interactor.GetUnreadNotificationCount()
+		// contextを渡す
+		resJSON, err := handler.Interactor.GetUnreadNotificationCount(ctx)
 		if err != nil {
 			return utils.GetErrorMassage(c, "en", err)
 		}
@@ -74,11 +74,11 @@ func (handler *NotificationHandler) GetUnreadNotificationCount() echo.HandlerFun
 func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// Create a segment for X-Ray tracing
-		_, seg := xray.BeginSegment(c.Request().Context(), "PostNotificationsRead")
+		ctx, seg := xray.BeginSegment(c.Request().Context(), "PostNotificationsRead")
 		defer seg.Close(err)
 
-		// NotificationInteractorにもcontextを渡せるように修正が必要
-		err = handler.Interactor.MarkNotificationsRead()
+		// contextを渡す
+		err = handler.Interactor.MarkNotificationsRead(ctx)
 		if err != nil {
 			return utils.GetErrorMassage(c, "en", err)
 		}

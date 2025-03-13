@@ -49,7 +49,7 @@ func (f FavoriteRepository) FindByUserId(ctx context.Context, userId string) (fa
 
 	// リポジトリモデルをDBから取得
 	var _favorites favorites
-	err = f.SQLHandler.Where(&_favorites.Data, FavoriteTable, "user_id = :user_id", in)
+	err = f.SQLHandler.Where(ctx, &_favorites.Data, FavoriteTable, "user_id = :user_id", in)
 	if err != nil {
 		return
 	}
@@ -94,7 +94,7 @@ func (f FavoriteRepository) Create(ctx context.Context, input *model.Favorite) (
 	in := map[string]interface{}{"pet_id": input.PetId, "user_id": input.UserId}
 
 	// リポジトリモデルをDBに保存
-	err = f.SQLHandler.Create(in, FavoriteTable)
+	err = f.SQLHandler.Create(ctx, in, FavoriteTable)
 
 	return
 }
@@ -123,7 +123,7 @@ func (f FavoriteRepository) Delete(ctx context.Context, input *model.Favorite) (
 	in := map[string]interface{}{"pet_id": _favorite.PetId, "user_id": _favorite.UserId}
 
 	// リポジトリモデルをDBから削除
-	err = f.SQLHandler.Delete(in, FavoriteTable)
+	err = f.SQLHandler.Delete(ctx, in, FavoriteTable)
 
 	return
 }

@@ -55,7 +55,7 @@ func (repo *ReservationRepository) Create(ctx context.Context, input *model.Rese
 	}
 
 	// リポジトリモデルをDBに保存
-	err = repo.SQLHandler.Create(in, ReservationTable)
+	err = repo.SQLHandler.Create(ctx, in, ReservationTable)
 
 	return
 }
