@@ -13,6 +13,7 @@ import (
 // ReservationRepositoryInterface ...
 type ReservationRepositoryInterface interface {
 	Create(ctx context.Context, input *model.Reservation) (err error)
+	GetCountByPetID(ctx context.Context, petID string) (count int64, err error)
 }
 
 // ReservationRepository ...
@@ -56,6 +57,26 @@ func (repo *ReservationRepository) Create(ctx context.Context, input *model.Rese
 
 	// リポジトリモデルをDBに保存
 	err = repo.SQLHandler.Create(ctx, in, ReservationTable)
+
+	return
+}
+
+// GetCountByPetID ...
+func (repo *ReservationRepository) GetCountByPetID(ctx context.Context, petID string) (count int64, err error) {
+	// サブセグメントを作成
+	_, seg := xray.BeginSubsegment(ctx, "ReservationRepository.GetCountByPetID")
+	defer seg.Close(err)
+
+	// メタデータを追加
+	if err := seg.AddMetadata("pet_id", petID); err != nil {
+		utils.LogError("Failed to add pet_id metadata: %v", err)
+	}
+
+	var tmpCount int
+	whereClause := "pet_id = :pet_id"
+	whereArgs := map[string]interface{}{"pet_id": petID}
+	err = repo.SQLHandler.Count(ctx, &tmpCount, ReservationTable, whereClause, whereArgs)
+	count = int64(tmpCount)
 
 	return
 }
