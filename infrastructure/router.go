@@ -38,12 +38,20 @@ func Router() *echo.Echo {
 			`"host":"${host}","method":"${method}","uri":"${uri}","user_agent":"${user_agent}",` +
 			`"status":${status},"error":"${error}"}` + "\n",
 		Output: os.Stdout,
+		Skipper: func(c echo.Context) bool {
+			return c.Path() == "/healthcheck"
+		},
 	})
 	e.Use(logger)
 	e.Use(middleware.Recover())
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			// healthcheckはX-Rayのセグメント作成を行わない
+			if c.Path() == "/healthcheck" {
+				return next(c)
+			}
+
 			req := c.Request()
 			res := c.Response()
 
