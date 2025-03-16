@@ -57,7 +57,6 @@ func NewSQLHandler() *SQLHandler {
 		if err != nil {
 			db.Close()
 			log.Fatalf("Error: No database connection established: %v", err)
-			os.Exit(1)
 		}
 
 		// 接続成功
