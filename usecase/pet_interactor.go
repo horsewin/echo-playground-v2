@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"math/rand"
+	"time"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
@@ -35,6 +37,16 @@ func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetF
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")
 		return
+	}
+
+	// 3回に1回だけCPU負荷を発生させる
+	if rand.Intn(3) == 0 {
+		induceCpuLoad()
+	}
+
+	// 3回に1回だけレイテンシを発生させる
+	if rand.Intn(3) == 0 {
+		induceLatency()
 	}
 
 	// ドメインモデルに変換
@@ -166,4 +178,24 @@ func (interactor *PetInteractor) CreateReservation(ctx context.Context, input *m
 		return
 	}
 	return
+}
+
+// induceCpuLoad ... 意図的にテスト用のCPU負荷を発生させる関数
+func induceCpuLoad() {
+	t := time.NewTimer(3 * time.Second)
+
+	go func() {
+		//nolint:staticcheck // 意図的に無限ループを作成してCPU負荷をシミュレートするためのコード
+		for {
+		}
+	}()
+	<-t.C
+	t.Stop()
+}
+
+// induceLatency ... 意図的にテスト用のレイテンシを発生させる関数
+func induceLatency() {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	milliseconds := r.Intn(500) + 500
+	time.Sleep(time.Duration(milliseconds) * time.Millisecond)
 }
