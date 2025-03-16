@@ -1,6 +1,11 @@
 package usecase
 
 import (
+	"context"
+	"math/rand"
+	"time"
+
+	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/domain/repository"
 	"github.com/horsewin/echo-playground-v2/utils"
@@ -15,12 +20,33 @@ type PetInteractor struct {
 }
 
 // GetPets ...
-func (interactor *PetInteractor) GetPets(filter *model.PetFilter) (pets []model.Pet, err error) {
+func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetFilter) (pets []model.Pet, err error) {
+	// サブセグメントを作成
+	subCtx, seg := xray.BeginSubsegment(ctx, "PetInteractor.GetPets")
+	defer seg.Close(err)
+
+	// メタデータを追加
+	if err := seg.AddMetadata("filter", filter); err != nil {
+		// エラーはログに記録するだけで処理は続行
+		utils.LogError("Failed to add filter metadata: %v", err)
+	}
+
 	// Repository層からデータを取得
-	_app, err := interactor.PetRepository.Find(filter)
+	// サブセグメントを作成
+	_app, err := interactor.PetRepository.Find(subCtx, filter)
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")
 		return
+	}
+
+	// 3回に1回だけCPU負荷を発生させる
+	if rand.Intn(3) == 0 {
+		induceCpuLoad()
+	}
+
+	// 3回に1回だけレイテンシを発生させる
+	if rand.Intn(3) == 0 {
+		induceLatency()
 	}
 
 	// ドメインモデルに変換
@@ -43,13 +69,27 @@ func (interactor *PetInteractor) GetPets(filter *model.PetFilter) (pets []model.
 		})
 	}
 
+	// 結果のメタデータを追加
+	if err := seg.AddMetadata("result_count", len(pets)); err != nil {
+		utils.LogError("Failed to add result_count metadata: %v", err)
+	}
+
 	return pets, nil
 }
 
 // UpdateLikeCount ...
-func (interactor *PetInteractor) UpdateLikeCount(input *model.InputUpdateLikeRequest) (err error) {
+func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *model.InputUpdateLikeRequest) (err error) {
+	// サブセグメントを作成
+	ctx, seg := xray.BeginSubsegment(ctx, "PetInteractor.UpdateLikeCount")
+	defer seg.Close(err)
+
+	// メタデータを追加
+	if err := seg.AddMetadata("input", input); err != nil {
+		utils.LogError("Failed to add input metadata: %v", err)
+	}
+
 	// like状態を取得
-	favMap, err := interactor.FavoriteRepository.FindByUserId(input.UserId)
+	favMap, err := interactor.FavoriteRepository.FindByUserId(ctx, input.UserId)
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")
 		return
@@ -60,7 +100,7 @@ func (interactor *PetInteractor) UpdateLikeCount(input *model.InputUpdateLikeReq
 	}
 
 	// 現在のペットモデルを取得
-	petData, err := interactor.PetRepository.Find(&model.PetFilter{ID: input.PetId})
+	petData, err := interactor.PetRepository.Find(ctx, &model.PetFilter{ID: input.PetId})
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")
 		return
@@ -90,14 +130,14 @@ func (interactor *PetInteractor) UpdateLikeCount(input *model.InputUpdateLikeReq
 	}
 
 	// TODO: トランザクションを使って更新処理を行う
-	err = interactor.PetRepository.Update(&pet)
+	err = interactor.PetRepository.Update(ctx, &pet)
 	if err != nil {
 		err = utils.SetErrorMassage("10003E")
 		return
 	}
 
 	if input.Value {
-		err = interactor.FavoriteRepository.Create(&model.Favorite{
+		err = interactor.FavoriteRepository.Create(ctx, &model.Favorite{
 			PetId:  input.PetId,
 			UserId: input.UserId,
 			Value:  input.Value,
@@ -107,7 +147,7 @@ func (interactor *PetInteractor) UpdateLikeCount(input *model.InputUpdateLikeReq
 			return
 		}
 	} else {
-		err = interactor.FavoriteRepository.Delete(&model.Favorite{
+		err = interactor.FavoriteRepository.Delete(ctx, &model.Favorite{
 			PetId:  input.PetId,
 			UserId: input.UserId,
 		})
@@ -121,11 +161,41 @@ func (interactor *PetInteractor) UpdateLikeCount(input *model.InputUpdateLikeReq
 }
 
 // CreateReservation ...
-func (interactor *PetInteractor) CreateReservation(input *model.Reservation) (err error) {
-	err = interactor.ReservationRepository.Create(input)
+func (interactor *PetInteractor) CreateReservation(ctx context.Context, input *model.Reservation) (err error) {
+	// サブセグメントを作成
+	ctx, seg := xray.BeginSubsegment(ctx, "PetInteractor.CreateReservation")
+	defer seg.Close(err)
+
+	// メタデータを追加
+	if err := seg.AddMetadata("input", input); err != nil {
+		utils.LogError("Failed to add input metadata: %v", err)
+	}
+
+	// サブセグメントを作成
+	err = interactor.ReservationRepository.Create(ctx, input)
 	if err != nil {
 		err = utils.SetErrorMassage("10003E")
 		return
 	}
 	return
+}
+
+// induceCpuLoad ... 意図的にテスト用のCPU負荷を発生させる関数
+func induceCpuLoad() {
+	t := time.NewTimer(3 * time.Second)
+
+	go func() {
+		//nolint:staticcheck // 意図的に無限ループを作成してCPU負荷をシミュレートするためのコード
+		for {
+		}
+	}()
+	<-t.C
+	t.Stop()
+}
+
+// induceLatency ... 意図的にテスト用のレイテンシを発生させる関数
+func induceLatency() {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	milliseconds := r.Intn(500) + 500
+	time.Sleep(time.Duration(milliseconds) * time.Millisecond)
 }

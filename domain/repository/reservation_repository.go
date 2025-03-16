@@ -1,14 +1,18 @@
 package repository
 
 import (
+	"context"
+	"time"
+
+	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/interface/database"
-	"time"
+	"github.com/horsewin/echo-playground-v2/utils"
 )
 
 // ReservationRepositoryInterface ...
 type ReservationRepositoryInterface interface {
-	Create(input *model.Reservation) (err error)
+	Create(ctx context.Context, input *model.Reservation) (err error)
 }
 
 // ReservationRepository ...
@@ -19,7 +23,22 @@ type ReservationRepository struct {
 const ReservationTable = "reservations"
 
 // Create ...
-func (repo *ReservationRepository) Create(input *model.Reservation) (err error) {
+func (repo *ReservationRepository) Create(ctx context.Context, input *model.Reservation) (err error) {
+	// サブセグメントを作成
+	_, seg := xray.BeginSubsegment(ctx, "ReservationRepository.Create")
+	defer seg.Close(err)
+
+	// メタデータを追加
+	if err := seg.AddMetadata("pet_id", input.PetId); err != nil {
+		utils.LogError("Failed to add pet_id metadata: %v", err)
+	}
+	if err := seg.AddMetadata("user_id", input.UserId); err != nil {
+		utils.LogError("Failed to add user_id metadata: %v", err)
+	}
+	if err := seg.AddMetadata("reservation_date", input.ReservationDate); err != nil {
+		utils.LogError("Failed to add reservation_date metadata: %v", err)
+	}
+
 	// ドメインモデルをmapに変換
 	rsvDatetime, err := time.Parse("20060102", input.ReservationDate)
 	if err != nil {
@@ -36,7 +55,7 @@ func (repo *ReservationRepository) Create(input *model.Reservation) (err error) 
 	}
 
 	// リポジトリモデルをDBに保存
-	err = repo.SQLHandler.Create(in, ReservationTable)
+	err = repo.SQLHandler.Create(ctx, in, ReservationTable)
 
 	return
 }
