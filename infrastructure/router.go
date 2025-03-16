@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-xray-sdk-go/xray"
 	handlers "github.com/horsewin/echo-playground-v2/handler"
+	"github.com/horsewin/echo-playground-v2/utils"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -18,19 +19,22 @@ const (
 // Router ...
 func Router() *echo.Echo {
 	e := echo.New()
+	apiConfig := utils.NewAPIConfig()
 
 	// X-Ray設定
-	if err := xray.Configure(xray.Config{
-		DaemonAddr:     "127.0.0.1:2000", // X-Rayデーモンのアドレス
-		ServiceVersion: "2.14.0",
-	}); err != nil {
-		e.Logger.Errorf("Failed to configure X-Ray: %v", err)
-		// X-Ray設定失敗時はデフォルトの設定を使用
-		if configErr := xray.Configure(xray.Config{}); configErr != nil {
-			e.Logger.Fatalf("Failed to configure default X-Ray settings: %v", configErr)
+	if apiConfig.EnableTracing {
+		if err := xray.Configure(xray.Config{
+			DaemonAddr:     "127.0.0.1:2000", // X-Rayデーモンのアドレス
+			ServiceVersion: "2.14.0",
+		}); err != nil {
+			e.Logger.Errorf("Failed to configure X-Ray: %v", err)
+			// X-Ray設定失敗時はデフォルトの設定を使用
+			if configErr := xray.Configure(xray.Config{}); configErr != nil {
+				e.Logger.Fatalf("Failed to configure default X-Ray settings: %v", configErr)
+			}
 		}
+		os.Setenv("AWS_XRAY_CONTEXT_MISSING", "LOG_ERROR")
 	}
-	os.Setenv("AWS_XRAY_CONTEXT_MISSING", "LOG_ERROR")
 
 	// Middleware
 	logger := middleware.LoggerWithConfig(middleware.LoggerConfig{

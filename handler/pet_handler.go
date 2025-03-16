@@ -65,8 +65,6 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 		}
 		defer seg.Close(err)
 
-		println("subseg", seg.Name)
-
 		filter := new(model.PetFilter)
 		if err := c.Bind(filter); err != nil {
 			return err
