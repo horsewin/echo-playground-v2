@@ -50,7 +50,7 @@ type PetRepository struct {
 // Find ...
 func (repo *PetRepository) Find(ctx context.Context, filter *model.PetFilter) (pets pets, err error) {
 	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "PetRepository.Find")
+	subCtx, seg := xray.BeginSubsegment(ctx, "PetRepository.Find")
 	defer seg.Close(err)
 
 	// フィルタ条件をリポジトリで解釈する型に変換
@@ -68,7 +68,7 @@ func (repo *PetRepository) Find(ctx context.Context, filter *model.PetFilter) (p
 	}
 
 	// インフラストラクチャレイヤの処理を実行
-	err = repo.SQLHandler.Where(ctx, &pets.Data, PetsTable, strings.Join(whereClause, " and "), args)
+	err = repo.SQLHandler.Where(subCtx, &pets.Data, PetsTable, strings.Join(whereClause, " and "), args)
 
 	// 結果のメタデータを追加
 	if err == nil {
@@ -83,7 +83,7 @@ func (repo *PetRepository) Find(ctx context.Context, filter *model.PetFilter) (p
 // Update ...
 func (repo *PetRepository) Update(ctx context.Context, input *model.Pet) (err error) {
 	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "PetRepository.Update")
+	subCtx, seg := xray.BeginSubsegment(ctx, "PetRepository.Update")
 	defer seg.Close(err)
 
 	// メタデータを追加
@@ -113,7 +113,7 @@ func (repo *PetRepository) Update(ctx context.Context, input *model.Pet) (err er
 	whereClause := "id = :id"
 
 	// SQLHandlerを呼び出し
-	err = repo.SQLHandler.Update(ctx, in, PetsTable, whereClause)
+	err = repo.SQLHandler.Update(subCtx, in, PetsTable, whereClause)
 
 	return
 }

@@ -20,7 +20,7 @@ type PetInteractor struct {
 // GetPets ...
 func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetFilter) (pets []model.Pet, err error) {
 	// サブセグメントを作成
-	ctx, seg := xray.BeginSubsegment(ctx, "PetInteractor.GetPets")
+	subCtx, seg := xray.BeginSubsegment(ctx, "PetInteractor.GetPets")
 	defer seg.Close(err)
 
 	// メタデータを追加
@@ -31,7 +31,7 @@ func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetF
 
 	// Repository層からデータを取得
 	// サブセグメントを作成
-	_app, err := interactor.PetRepository.Find(ctx, filter)
+	_app, err := interactor.PetRepository.Find(subCtx, filter)
 	if err != nil {
 		err = utils.SetErrorMassage("10001E")
 		return

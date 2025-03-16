@@ -40,7 +40,7 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// サブセグメントを作成
 		ctx := c.Request().Context()
-		_, seg := xray.BeginSubsegment(ctx, "GetPets")
+		subCtx, seg := xray.BeginSubsegment(ctx, "GetPets")
 		if seg == nil {
 			// セグメントが作成できない場合はログに記録して処理を続行
 			c.Logger().Warn("Failed to begin subsegment: GetPets")
@@ -51,7 +51,7 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 			}
 
 			// Pass the context with X-Ray segment to the interactor
-			res, err := handler.Interactor.GetPets(ctx, filter)
+			res, err := handler.Interactor.GetPets(subCtx, filter)
 			if err != nil {
 				return utils.GetErrorMassage(c, "en", err)
 			}
@@ -64,6 +64,8 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 			return c.JSON(http.StatusOK, resJSON)
 		}
 		defer seg.Close(err)
+
+		println("subseg", seg.Name)
 
 		filter := new(model.PetFilter)
 		if err := c.Bind(filter); err != nil {

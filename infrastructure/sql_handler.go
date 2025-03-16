@@ -33,6 +33,10 @@ var (
 	once               sync.Once
 )
 
+const (
+	dbType = "postgres"
+)
+
 // NewSQLHandler ...
 func NewSQLHandler() *SQLHandler {
 	once.Do(func() {
@@ -44,12 +48,11 @@ func NewSQLHandler() *SQLHandler {
 		CONNECT := "user=" + USER + " password=" + PASS + " " + PROTOCOL + " dbname=" + DBNAME + " sslmode=disable"
 
 		// X-Ray対応のSQLコンテキストを作成
-		// 注意: この時点ではコンテキストがないため、実際のトレースはリクエスト処理時に行われる
-		db, err := xray.SQLContext("postgres", CONNECT)
+		db, err := xray.SQLContext(dbType, CONNECT)
 		if err != nil {
 			log.Fatalf("Error: No database connection established: %v", err)
 		}
-		conn := sqlx.NewDb(db, "postgres")
+		conn := sqlx.NewDb(db, dbType)
 		err = conn.Ping()
 		if err != nil {
 			db.Close()
@@ -69,7 +72,7 @@ func NewSQLHandler() *SQLHandler {
 // Where ...
 func (handler *SQLHandler) Where(ctx context.Context, out interface{}, table string, whereClause string, whereArgs map[string]interface{}) error {
 	// X-Rayサブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Where")
+	subCtx, seg := xray.BeginSubsegment(ctx, "SQLHandler.Where")
 	if seg == nil {
 		// セグメントが作成できない場合はログに記録して処理を続行
 		utils.LogError("Failed to begin subsegment: SQLHandler.Where")
@@ -98,7 +101,7 @@ func (handler *SQLHandler) Where(ctx context.Context, out interface{}, table str
 		return err
 	}
 
-	err = stmt.Select(out, whereArgs)
+	err = stmt.SelectContext(subCtx, out, whereArgs)
 	if err != nil {
 		if addErr := seg.AddError(err); addErr != nil {
 			utils.LogError("Failed to add error to segment: %v", addErr)
@@ -125,7 +128,7 @@ func (handler *SQLHandler) whereWithoutXRay(out interface{}, table string, where
 // Scan ...
 func (handler *SQLHandler) Scan(ctx context.Context, out interface{}, table string, order string) error {
 	// X-Rayサブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Scan")
+	subCtx, seg := xray.BeginSubsegment(ctx, "SQLHandler.Scan")
 	if seg == nil {
 		// セグメントが作成できない場合はログに記録して処理を続行
 		utils.LogError("Failed to begin subsegment: SQLHandler.Scan")
@@ -140,7 +143,7 @@ func (handler *SQLHandler) Scan(ctx context.Context, out interface{}, table stri
 		utils.LogError("Failed to add query metadata: %v", err)
 	}
 
-	err := handler.Conn.Select(out, query)
+	err := handler.Conn.SelectContext(subCtx, out, query)
 	if err != nil {
 		if addErr := seg.AddError(err); addErr != nil {
 			utils.LogError("Failed to add error to segment: %v", addErr)
@@ -158,7 +161,7 @@ func (handler *SQLHandler) scanWithoutXRay(out interface{}, table string, order 
 // Count ...
 func (handler *SQLHandler) Count(ctx context.Context, out *int, table string, whereClause string, whereArgs map[string]interface{}) error {
 	// X-Rayサブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Count")
+	subCtx, seg := xray.BeginSubsegment(ctx, "SQLHandler.Count")
 	if seg == nil {
 		// セグメントが作成できない場合はログに記録して処理を続行
 		utils.LogError("Failed to begin subsegment: SQLHandler.Count")
@@ -188,7 +191,7 @@ func (handler *SQLHandler) Count(ctx context.Context, out *int, table string, wh
 		return err
 	}
 
-	err = stmt.Get(&count, whereArgs)
+	err = stmt.GetContext(subCtx, &count, whereArgs)
 	*out = count
 	if err != nil {
 		if addErr := seg.AddError(err); addErr != nil {
@@ -219,7 +222,7 @@ func (handler *SQLHandler) countWithoutXRay(out *int, table string, whereClause 
 // Create ...
 func (handler *SQLHandler) Create(ctx context.Context, input map[string]interface{}, table string) error {
 	// X-Rayサブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Create")
+	subCtx, seg := xray.BeginSubsegment(ctx, "SQLHandler.Create")
 	if seg == nil {
 		// セグメントが作成できない場合はログに記録して処理を続行
 		utils.LogError("Failed to begin subsegment: SQLHandler.Create")
@@ -253,8 +256,7 @@ func (handler *SQLHandler) Create(ctx context.Context, input map[string]interfac
 		utils.LogError("Failed to add input metadata: %v", err)
 	}
 
-	fmt.Println(query)
-	_, err := handler.Conn.NamedExec(query, input)
+	_, err := handler.Conn.NamedExecContext(subCtx, query, input)
 	if err != nil {
 		if addErr := seg.AddError(err); addErr != nil {
 			utils.LogError("Failed to add error to segment: %v", addErr)
@@ -291,7 +293,7 @@ func (handler *SQLHandler) createWithoutXRay(input map[string]interface{}, table
 // Update ...
 func (handler *SQLHandler) Update(ctx context.Context, in map[string]interface{}, table string, whereClause string) error {
 	// X-Rayサブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Update")
+	subCtx, seg := xray.BeginSubsegment(ctx, "SQLHandler.Update")
 	if seg == nil {
 		// セグメントが作成できない場合はログに記録して処理を続行
 		utils.LogError("Failed to begin subsegment: SQLHandler.Update")
@@ -318,7 +320,7 @@ func (handler *SQLHandler) Update(ctx context.Context, in map[string]interface{}
 
 	fmt.Println(query)
 
-	_, err := handler.Conn.NamedExec(query, in)
+	_, err := handler.Conn.NamedExecContext(subCtx, query, in)
 	if err != nil {
 		if addErr := seg.AddError(err); addErr != nil {
 			utils.LogError("Failed to add error to segment: %v", addErr)
@@ -348,7 +350,7 @@ func (handler *SQLHandler) updateWithoutXRay(in map[string]interface{}, table st
 // Delete ...
 func (handler *SQLHandler) Delete(ctx context.Context, in map[string]interface{}, table string) error {
 	// X-Rayサブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "SQLHandler.Delete")
+	subCtx, seg := xray.BeginSubsegment(ctx, "SQLHandler.Delete")
 	if seg == nil {
 		// セグメントが作成できない場合はログに記録して処理を続行
 		utils.LogError("Failed to begin subsegment: SQLHandler.Delete")
@@ -375,7 +377,7 @@ func (handler *SQLHandler) Delete(ctx context.Context, in map[string]interface{}
 
 	fmt.Println(query)
 
-	_, err := handler.Conn.NamedExec(query, values)
+	_, err := handler.Conn.NamedExecContext(subCtx, query, values)
 	if err != nil {
 		if addErr := seg.AddError(err); addErr != nil {
 			utils.LogError("Failed to add error to segment: %v", addErr)
