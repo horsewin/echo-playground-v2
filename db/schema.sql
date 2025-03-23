@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS reservations
     email          TEXT    NOT NULL,
     -- 見学予定日時
     reservation_datetime TIMESTAMP NOT NULL,
+    -- 予約ステータス pending, confirmed, cancelled
+    status TEXT NOT NULL,
     -- 予約対象のペットID
     -- petsテーブルのidを参照 (FK)
     pet_id         TEXT    NOT NULL REFERENCES pets (id) ON DELETE CASCADE,
@@ -48,7 +50,26 @@ CREATE TABLE IF NOT EXISTS favorites
     -- 予約対象のペットID
     -- petsテーブルのidを参照 (FK)
     pet_id         TEXT    NOT NULL REFERENCES pets (id) ON DELETE CASCADE
-    );
+);
+
+-- 通知を管理するテーブル
+CREATE TABLE IF NOT EXISTS notifications
+(
+    -- 通知ごとに一意のIDを持たせる
+    id int GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    -- ユーザを識別するID
+    user_id        TEXT    NOT NULL,
+    -- 通知のタイトル
+    title          TEXT    NOT NULL,
+    -- 通知のメッセージ内容
+    message        TEXT    NOT NULL,
+    -- 既読状態
+    is_read        BOOLEAN NOT NULL DEFAULT FALSE,
+    -- 通知レコードが作られた日時
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- 通知レコードが更新された日時
+    updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 ---
 

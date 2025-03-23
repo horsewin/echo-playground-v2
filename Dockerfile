@@ -1,5 +1,5 @@
 # Multi stage building strategy for reducing image size.
-FROM public.ecr.aws/docker/library/golang:1.23.4 AS build-env
+FROM public.ecr.aws/docker/library/golang:1.23.4 AS builder
 ENV GO111MODULE=on \
     GOPATH=/go \
     GOBIN=/go/bin \
@@ -26,6 +26,6 @@ RUN make validate && \
 ### If use TLS connection in container, add ca-certificates following command.
 ### > RUN apt-get update && apt-get install -y ca-certificates
 FROM gcr.io/distroless/base-debian12
-COPY --from=build-env /app/bin/main /
+COPY --from=builder /app/bin/main /
 EXPOSE 80
 ENTRYPOINT ["/main"]

@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	// TODO: 適切な名前に変更をする
 	projectName = "echo-playground-v2"
 )
 
