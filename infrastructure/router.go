@@ -49,6 +49,7 @@ func Router() *echo.Echo {
 	})
 	e.Use(logger)
 	e.Use(middleware.Recover())
+	e.Logger.SetLevel(log.INFO)
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
