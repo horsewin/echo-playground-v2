@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/horsewin/echo-playground-v2/infrastructure"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -23,13 +24,20 @@ func main() {
 	signal.Notify(quit, syscall.SIGTERM)
 
 	router := infrastructure.Router()
+
 	// Start server
 	go func() {
 		if os.Getenv(envTLSCert) == "" || os.Getenv(envTLSKey) == "" {
-			router.Logger.Fatal(router.Start(":8081"))
+			log.Info().Msg("Starting server on :8081")
+			if err := router.Start(":8081"); err != nil {
+				log.Fatal().Err(err).Msg("Failed to start server")
+			}
 		} else {
-			router.Logger.Fatal(router.StartTLS(":443",
-				os.Getenv(envTLSCert), os.Getenv(envTLSKey)))
+			log.Info().Msg("Starting server with TLS on :443")
+			if err := router.StartTLS(":443",
+				os.Getenv(envTLSCert), os.Getenv(envTLSKey)); err != nil {
+				log.Fatal().Err(err).Msg("Failed to start server with TLS")
+			}
 		}
 	}()
 
@@ -39,7 +47,7 @@ func main() {
 	defer cancel()
 
 	if err := router.Shutdown(ctx); err != nil {
-		router.Logger.Fatal("Error:", err)
+		log.Fatal().Err(err).Msg("Error during server shutdown")
 	}
 	fmt.Println("Exited app")
 }

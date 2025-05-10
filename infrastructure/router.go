@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"os"
+	"time"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
 	handlers "github.com/horsewin/echo-playground-v2/handler"
@@ -9,7 +10,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/labstack/gommon/log"
+	"github.com/rs/zerolog"
+	zerologlog "github.com/rs/zerolog/log"
 )
 
 const (
@@ -19,6 +21,10 @@ const (
 
 // Router ...
 func Router() *echo.Echo {
+	// Setup Zerolog
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	zerologlog.Logger = zerologlog.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
+
 	e := echo.New()
 	apiConfig := utils.NewAPIConfig()
 
@@ -37,19 +43,35 @@ func Router() *echo.Echo {
 		os.Setenv("AWS_XRAY_CONTEXT_MISSING", "LOG_ERROR")
 	}
 
-	// Middleware
-	logger := middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: `{"id":"${id}","time":"${time_rfc3339}","remote_ip":"${remote_ip}",` +
-			`"host":"${host}","method":"${method}","uri":"${uri}","user_agent":"${user_agent}",` +
-			`"status":${status},"error":"${error}"}` + "\n",
-		Output: os.Stdout,
+	logger := zerolog.New(os.Stdout)
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogURI:       true,
+		LogStatus:    true,
+		LogUserAgent: true,
+		LogMethod:    true,
+		LogLatency:   true,
+		LogRemoteIP:  true,
+		LogRequestID: true,
+		LogError:     true,
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			logger.Info().
+				Str("id", v.RequestID).
+				Str("time", time.Now().Format(time.RFC3339Nano)).
+				Str("remote_ip", v.RemoteIP).
+				Str("method", v.Method).
+				Str("uri", v.URI).
+				Int("status", v.Status).
+				// Str("error", v.Error.Error()).
+				Str("user_agent", v.UserAgent).
+				Msg("request")
+
+			return nil
+		},
 		Skipper: func(c echo.Context) bool {
 			return c.Path() == "/healthcheck"
 		},
-	})
-	e.Use(logger)
+	}))
 	e.Use(middleware.Recover())
-	e.Logger.SetLevel(log.INFO)
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -100,7 +122,6 @@ func Router() *echo.Echo {
 		}
 	})
 
-	e.Logger.SetLevel(log.INFO)
 	e.HideBanner = true
 	e.HidePort = false
 
@@ -111,6 +132,7 @@ func Router() *echo.Echo {
 	e.GET("/", healthCheckHandler.HealthCheck())
 	e.GET("/healthcheck", healthCheckHandler.HealthCheck())
 	e.GET("/v1/helloworld", helloWorldHandler.SayHelloWorld())
+	e.GET("/v1/helloworld/error", helloWorldHandler.SayError())
 	if os.Getenv("DB_CONN") == "1" {
 		sqlHandler := NewSQLHandler()
 		petHandler := handlers.NewPetHandler(sqlHandler)

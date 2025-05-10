@@ -48,3 +48,12 @@ func (handler *HelloWorldHandler) SayHelloWorld() echo.HandlerFunc {
 		})
 	}
 }
+
+// SayError ...
+func (handler *HelloWorldHandler) SayError() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.JSON(http.StatusNotImplemented, model.APIResponse{
+			Data: nil,
+		})
+	}
+}

@@ -6,7 +6,6 @@ ENV GO111MODULE=on \
     PATH=/go/bin:$PATH
 
 # Set working directory
-RUN mkdir /app
 WORKDIR /app
 
 # Install each dependencies
@@ -25,7 +24,7 @@ RUN make validate && \
 
 ### If use TLS connection in container, add ca-certificates following command.
 ### > RUN apt-get update && apt-get install -y ca-certificates
-FROM gcr.io/distroless/base-debian12
+FROM public.ecr.aws/debian/debian
 COPY --from=builder /app/bin/main /
 EXPOSE 80
 ENTRYPOINT ["/main"]
