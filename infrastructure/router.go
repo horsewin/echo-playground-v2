@@ -1,6 +1,9 @@
 package infrastructure
 
 import (
+	"fmt"
+	"github.com/horsewin/echo-playground-v2/domain/model"
+	"net/http"
 	"os"
 	"time"
 
@@ -19,14 +22,51 @@ const (
 	projectName = "echo-playground-v2"
 )
 
+// customHTTPErrorHandler handles errors and separates client-facing messages from internal logs
+func customHTTPErrorHandler(err error, c echo.Context) {
+	// Get logger from context
+	logger := zerolog.Ctx(c.Request().Context())
+
+	// Prepare client-facing response
+	code := http.StatusInternalServerError
+	msg := "Internal server error" // Generic message for production
+
+	// If it's an Echo HTTP error, use its code and possibly its message
+	if he, ok := err.(*echo.HTTPError); ok {
+		code = he.Code
+		// For 4xx errors, we can be more specific with the client
+		if code >= 400 && code < 500 {
+			msg = fmt.Sprintf("%v", he.Message)
+		}
+	}
+
+	// In development, we might want to show more details
+	if os.Getenv("APP_ENV") == "development" {
+		msg = err.Error()
+	}
+
+	// Send response to client
+	// c.JSON() は第二引数にnilを渡すと空のJSONボディになることがあるので注意
+	// 適切なエラーレスポンス形式 (例: {"message": "エラーメッセージ"}) にする
+	if !c.Response().Committed { // レスポンスがまだ送信されていなければ送信
+		if err := c.JSON(code, model.ErrorMessages{Code: code, Message: msg}); err != nil {
+			// JSON送信自体でエラーが起きた場合はさらにログを出すなど
+			logger.Error().Err(err).Msg("Failed to send error JSON response")
+		}
+	}
+
+}
+
 // Router ...
 func Router() *echo.Echo {
 	// Setup Zerolog
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	zerologlog.Logger = zerologlog.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
+	logger := zerolog.New(os.Stdout)
 
 	e := echo.New()
 	apiConfig := utils.NewAPIConfig()
+
+	// Set custom error handler
+	e.HTTPErrorHandler = customHTTPErrorHandler
 
 	// X-Ray設定
 	if apiConfig.EnableTracing {
@@ -43,7 +83,7 @@ func Router() *echo.Echo {
 		os.Setenv("AWS_XRAY_CONTEXT_MISSING", "LOG_ERROR")
 	}
 
-	logger := zerolog.New(os.Stdout)
+	e.Use(middleware.RequestID())
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:       true,
 		LogStatus:    true,
@@ -54,16 +94,26 @@ func Router() *echo.Echo {
 		LogRequestID: true,
 		LogError:     true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			logger.Info().
-				Str("id", v.RequestID).
+			event := logger.Info()
+			if v.Status >= 500 {
+				event = logger.Error()
+			} else if v.Status >= 400 {
+				event = logger.Warn()
+			}
+
+			rid := c.Response().Header().Get(echo.HeaderXRequestID)
+
+			event.Str("request_id", rid).
 				Str("time", time.Now().Format(time.RFC3339Nano)).
 				Str("remote_ip", v.RemoteIP).
 				Str("method", v.Method).
 				Str("uri", v.URI).
 				Int("status", v.Status).
-				// Str("error", v.Error.Error()).
-				Str("user_agent", v.UserAgent).
-				Msg("request")
+				Str("user_agent", v.UserAgent)
+			if v.Error != nil {
+				event.Str("error", v.Error.Error())
+			}
+			event.Msg("completed request")
 
 			return nil
 		},
@@ -75,6 +125,14 @@ func Router() *echo.Echo {
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			rid := c.Response().Header().Get(echo.HeaderXRequestID)
+			// Create request-specific logger with request details
+			reqLogger := zerologlog.With().
+				Str("request_id", rid).
+				Str("method", c.Request().Method).
+				Str("path", c.Request().URL.Path).
+				Logger()
+
 			// healthcheckはX-Rayのセグメント作成を行わない
 			if c.Path() == "/healthcheck" {
 				return next(c)
@@ -91,7 +149,7 @@ func Router() *echo.Echo {
 			if seg == nil {
 				// セグメント作成に失敗した場合はエラーをログに記録し、
 				// 通常のリクエスト処理を継続
-				c.Logger().Errorf("Failed to create X-Ray segment")
+				reqLogger.Err(fmt.Errorf("failed to create X-Ray segment"))
 				return next(c)
 			}
 
@@ -101,20 +159,20 @@ func Router() *echo.Echo {
 			}()
 
 			// リクエストのコンテキストを更新
-			c.SetRequest(req.WithContext(ctx))
+			c.SetRequest(req.WithContext(reqLogger.WithContext(ctx)))
 
 			// 次のハンドラーを呼び出し
 			err = next(c)
 
 			// レスポンスステータスをセグメントに記録
 			if addErr := seg.AddMetadata("response_status", res.Status); addErr != nil {
-				c.Logger().Errorf("Failed to add response_status metadata: %v", addErr)
+				reqLogger.Err(fmt.Errorf("failed to add response_status metadata: %v", addErr))
 			}
 
 			// エラーが発生した場合、セグメントにエラー情報を記録
 			if err != nil {
 				if addErr := seg.AddError(err); addErr != nil {
-					c.Logger().Errorf("Failed to add error to segment: %v", addErr)
+					reqLogger.Err(fmt.Errorf("failed to add error metadata: %v", addErr))
 				}
 			}
 

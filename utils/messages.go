@@ -8,7 +8,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"regexp"
-	"strconv"
 )
 
 var messageConfig map[string]interface{}
@@ -21,17 +20,12 @@ func init() {
 }
 
 // GetMessageStatusCode is ...
-func GetMessageStatusCode(messageCode string) int {
+func getMessageStatusCode(messageCode string) int {
 	return int((messageConfig[messageCode].(map[string]interface{}))["statusCode"].(float64))
 }
 
-// GetMessageMessageCode is ...
-func GetMessageMessageCode(messageCode string) string {
-	return (messageConfig[messageCode].(map[string]interface{}))["messageCode"].(string)
-}
-
-// GetMessageMessage is ...
-func GetMessageMessage(lang string, messageCode string, args ...interface{}) string {
+// getMessage is ...
+func getMessage(lang string, messageCode string, args ...interface{}) string {
 	llang := lang
 
 	if !(llang == "ja" || llang == "en") {
@@ -40,33 +34,36 @@ func GetMessageMessage(lang string, messageCode string, args ...interface{}) str
 	return fmt.Sprintf(((messageConfig[messageCode].(map[string]interface{}))["message"].(map[string]interface{}))[llang].(string), args...)
 }
 
-// GetErrorMassage is ...
-func GetErrorMassage(context interface{}, lang string, err1 error) (err error) {
+// GetError is ...
+func GetError(context interface{}, lang string, err1 error) (err error) {
 	c := context.(echo.Context)
 	messageCode := err1.Error()
 
 	// messageCodeが"数字5桁+E"の正規表現になっているかチェック
 	if !regexp.MustCompile(`\d{5}[IWE]`).Match([]byte(messageCode)) {
 		return c.JSON(http.StatusInternalServerError, &model.ErrorMessages{
-			Code:    strconv.Itoa(http.StatusInternalServerError),
+			Code:    http.StatusInternalServerError,
 			Message: "Unhandled internal server error",
 		})
 	}
 
-	errStatusCode := GetMessageStatusCode(messageCode)
-	errMessageCode := GetMessageMessageCode(messageCode)
-	errMessage := GetMessageMessage(lang, messageCode)
+	errStatusCode := getMessageStatusCode(messageCode)
 
-	errorMessages := &model.ErrorMessages{
-		Code:    errMessageCode,
-		Message: errMessage,
-	}
-
-	return c.JSON(errStatusCode, errorMessages)
+	return echo.NewHTTPError(errStatusCode, getMessage(lang, messageCode))
 }
 
-// SetErrorMassage is ...
-func SetErrorMassage(messageCode string) (err error) {
+// ConvertErrorMassage is ...
+func ConvertErrorMassage(context interface{}, messageCode string, errorAsLogging error) (err error) {
+	if errorAsLogging != nil && context != nil {
+		// Try to use echo.Context logger if available
+		if echoCtx, ok := context.(echo.Context); ok {
+			echoCtx.Logger().Error(errorAsLogging)
+		} else {
+			// Fallback to standard output for other context types
+			fmt.Printf("Error: %v\n", errorAsLogging)
+		}
+	}
+
 	err = errors.New(messageCode)
 	return
 }

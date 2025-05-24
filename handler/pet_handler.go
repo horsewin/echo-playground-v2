@@ -53,7 +53,7 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 			// Pass the context with X-Ray segment to the interactor
 			res, err := handler.Interactor.GetPets(subCtx, filter)
 			if err != nil {
-				return utils.GetErrorMassage(c, "en", err)
+				return utils.GetError(c, "en", err)
 			}
 
 			// resの中身をJSONにして返却
@@ -73,7 +73,7 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 		// Pass the context with X-Ray segment to the interactor
 		res, err := handler.Interactor.GetPets(ctx, filter)
 		if err != nil {
-			return utils.GetErrorMassage(c, "en", err)
+			return utils.GetError(c, "en", err)
 		}
 
 		// Add metadata to the segment
@@ -128,7 +128,7 @@ func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 			})
 
 			if err != nil {
-				return utils.GetErrorMassage(c, "en", err)
+				return utils.GetError(c, "en", err)
 			}
 
 			return c.JSON(http.StatusOK, model.Response{
@@ -174,7 +174,7 @@ func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 		})
 
 		if err != nil {
-			return utils.GetErrorMassage(c, "en", err)
+			return utils.GetError(c, "en", err)
 		}
 
 		return c.JSON(http.StatusOK, model.Response{
@@ -223,7 +223,7 @@ func (handler *PetHandler) Reservation() echo.HandlerFunc {
 			})
 
 			if err != nil {
-				return utils.GetErrorMassage(c, "en", err)
+				return utils.GetError(c, "en", err)
 			}
 
 			return c.JSON(http.StatusOK, model.Response{
@@ -273,7 +273,7 @@ func (handler *PetHandler) Reservation() echo.HandlerFunc {
 		})
 
 		if err != nil {
-			return utils.GetErrorMassage(c, "en", err)
+			return utils.GetError(c, "en", err)
 		}
 
 		return c.JSON(http.StatusOK, model.Response{

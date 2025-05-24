@@ -20,7 +20,7 @@ CREATE TABLE pets
 CREATE TABLE IF NOT EXISTS reservations
 (
     -- 予約ごとに一意のIDを持たせる (UUID, SERIALなど)
-    reservation_id int GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id int GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     -- ユーザを識別するID（外部の認証IDや社内システムIDなど任意）
     user_id        TEXT    NOT NULL,
     -- ユーザの氏名
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS reservations
     -- ユーザのメールアドレス
     email          TEXT    NOT NULL,
     -- 見学予定日時
-    reservation_datetime TIMESTAMP NOT NULL,
+    reservation_date_time TIMESTAMP NOT NULL,
     -- 予約ステータス pending, confirmed, cancelled
     status TEXT NOT NULL,
     -- 予約対象のペットID
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS reservations
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- 予約レコードが更新された日時
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+);
 
 -- likeを管理するテーブル
 CREATE TABLE IF NOT EXISTS favorites
@@ -65,6 +65,8 @@ CREATE TABLE IF NOT EXISTS notifications
     message        TEXT    NOT NULL,
     -- 既読状態
     is_read        BOOLEAN NOT NULL DEFAULT FALSE,
+    -- 通知の種類
+    type           TEXT    NOT NULL,
     -- 通知レコードが作られた日時
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- 通知レコードが更新された日時
@@ -266,3 +268,16 @@ INSERT INTO pets (
  '0000012',
  '{"cute","famous","cool"}'
 );
+
+-- Notification test data
+INSERT INTO notifications (
+    user_id,
+    title,
+    message,
+    is_read,
+    type
+) VALUES
+('user1', '新しいペットが入荷しました', '可愛い子猫が新しく入荷しました。ぜひチェックしてください！', false, 'new_pet'),
+('user1', 'お気に入りペットの価格変更', 'お気に入り登録しているペットの価格が変更されました。', false, 'price_change'),
+('user2', '予約確認', 'ペット見学の予約が確定しました。', true, 'reservation'),
+('user1', 'キャンペーン情報', '今週末限定のキャンペーンが開始されました！', false, 'campaign');

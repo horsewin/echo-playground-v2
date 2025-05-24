@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"fmt"
-
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/domain/repository"
 	"github.com/horsewin/echo-playground-v2/utils"
@@ -19,14 +18,14 @@ func (interactor *NotificationInteractor) GetNotifications(ctx context.Context, 
 	if id == "" {
 		app, err = interactor.NotificationRepository.FindAll(ctx)
 		if err != nil {
-			err = utils.SetErrorMassage("10001E")
+			err = utils.ConvertErrorMassage(ctx, "10001E", err)
 			return
 		}
 
 	} else {
 		app, err = interactor.NotificationRepository.Find(ctx, id)
 		if err != nil {
-			err = utils.SetErrorMassage("10001E")
+			err = utils.ConvertErrorMassage(ctx, "10001E", err)
 			return
 		}
 	}
@@ -36,12 +35,12 @@ func (interactor *NotificationInteractor) GetNotifications(ctx context.Context, 
 
 // GetUnreadNotificationCount ...
 func (interactor *NotificationInteractor) GetUnreadNotificationCount(ctx context.Context) (count model.NotificationCount, err error) {
-	whereClause := "unread = :unread"
-	whereArgs := map[string]interface{}{"unread": true}
+	whereClause := "is_read = :is_read"
+	whereArgs := map[string]interface{}{"is_read": false}
 	count, err = interactor.NotificationRepository.Count(ctx, whereClause, whereArgs)
 	if err != nil {
 		fmt.Println(err)
-		err = utils.SetErrorMassage("10001E")
+		err = utils.ConvertErrorMassage(ctx, "10001E", err)
 		return
 	}
 
@@ -55,7 +54,7 @@ func (interactor *NotificationInteractor) MarkNotificationsRead(ctx context.Cont
 	err = interactor.NotificationRepository.Update(ctx, map[string]interface{}{"Unread": false}, clause, args)
 
 	if err != nil {
-		err = utils.SetErrorMassage("10001E")
+		err = utils.ConvertErrorMassage(ctx, "10001E", err)
 		return
 	}
 

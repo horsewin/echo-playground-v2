@@ -45,7 +45,7 @@ func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetF
 	// サブセグメントを作成
 	_app, err := interactor.PetRepository.Find(subCtx, filter)
 	if err != nil {
-		err = utils.SetErrorMassage("10001E")
+		err = utils.ConvertErrorMassage(ctx, "10001E", err)
 		return
 	}
 
@@ -101,18 +101,18 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 	// like状態を取得
 	favMap, err := interactor.FavoriteRepository.FindByUserId(ctx, input.UserId)
 	if err != nil {
-		err = utils.SetErrorMassage("10001E")
+		err = utils.ConvertErrorMassage(ctx, "10001E", err)
 		return
 	}
 	if favMap[input.PetId].Value == input.Value {
-		err = utils.SetErrorMassage("00001I")
+		err = utils.ConvertErrorMassage(ctx, "00001I", nil)
 		return
 	}
 
 	// 現在のペットモデルを取得
 	petData, err := interactor.PetRepository.Find(ctx, &model.PetFilter{ID: input.PetId})
 	if err != nil {
-		err = utils.SetErrorMassage("10001E")
+		err = utils.ConvertErrorMassage(ctx, "10001E", err)
 		return
 	}
 	var pet model.Pet
@@ -120,7 +120,7 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 		if p.ID == input.PetId {
 			err = copier.Copy(&pet, &p)
 			if err != nil {
-				err = utils.SetErrorMassage("10002E")
+				err = utils.ConvertErrorMassage(ctx, "10002E", err)
 				return
 			}
 
@@ -142,7 +142,7 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 	// TODO: トランザクションを使って更新処理を行う
 	err = interactor.PetRepository.Update(ctx, &pet)
 	if err != nil {
-		err = utils.SetErrorMassage("10003E")
+		err = utils.ConvertErrorMassage(ctx, "10003E", err)
 		return
 	}
 
@@ -153,7 +153,7 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 			Value:  input.Value,
 		})
 		if err != nil {
-			err = utils.SetErrorMassage("10004E")
+			err = utils.ConvertErrorMassage(ctx, "10004E", err)
 			return
 		}
 	} else {
@@ -162,7 +162,7 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 			UserId: input.UserId,
 		})
 		if err != nil {
-			err = utils.SetErrorMassage("10005E")
+			err = utils.ConvertErrorMassage(ctx, "10005E", err)
 			return
 		}
 	}
@@ -184,7 +184,7 @@ func (interactor *PetInteractor) CreateReservation(ctx context.Context, input *m
 	// サブセグメントを作成
 	err = interactor.ReservationRepository.Create(ctx, input)
 	if err != nil {
-		err = utils.SetErrorMassage("10003E")
+		err = utils.ConvertErrorMassage(ctx, "10003E", err)
 		return
 	}
 	return

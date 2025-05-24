@@ -24,5 +24,5 @@ type (
 
 // TableName ... override table name accessor
 func (Notification) TableName() string {
-	return "Notification"
+	return "notifications"
 }

@@ -22,7 +22,7 @@ type NotificationRepository struct {
 	database.SQLHandler
 }
 
-const NotificationTable = "Notification"
+const NotificationTable = "notifications"
 
 // Find ...
 func (repo *NotificationRepository) Find(ctx context.Context, id string) (notifications model.Notifications, err error) {

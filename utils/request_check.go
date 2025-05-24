@@ -13,7 +13,7 @@ func HeaderCheck(context interface{}, headerName string, headerValue string) (er
 	c := context.(echo.Context)
 	currentHeader := c.Request().Header.Get(headerName)
 	if currentHeader != headerValue {
-		err = SetErrorMassage("00001E")
+		err = ConvertErrorMassage(nil, "00001E", nil)
 	}
 	return
 }
@@ -25,7 +25,7 @@ func ClientIDCheck(context interface{}) (err error) {
 	c := context.(echo.Context)
 	clientID := c.Request().Header.Get(headerClientID)
 	if clientID != config.HeaderValue.ClientID {
-		err = SetErrorMassage("00002E")
+		err = ConvertErrorMassage(nil, "00002E", nil)
 	}
 	return
 }

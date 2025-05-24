@@ -42,7 +42,7 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 			// contextを渡す（セグメントなし）
 			resJSON, err := handler.Interactor.GetNotifications(ctx, c.QueryParam("id"))
 			if err != nil {
-				return utils.GetErrorMassage(c, "en", err)
+				return utils.GetError(c, "en", err)
 			}
 
 			return c.JSON(http.StatusOK, resJSON)
@@ -59,7 +59,7 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 		// contextを渡す
 		resJSON, err := handler.Interactor.GetNotifications(ctx, id)
 		if err != nil {
-			return utils.GetErrorMassage(c, "en", err)
+			return utils.GetError(c, "en", err)
 		}
 
 		return c.JSON(http.StatusOK, resJSON)
@@ -79,7 +79,7 @@ func (handler *NotificationHandler) GetUnreadNotificationCount() echo.HandlerFun
 			// contextを渡す（セグメントなし）
 			resJSON, err := handler.Interactor.GetUnreadNotificationCount(ctx)
 			if err != nil {
-				return utils.GetErrorMassage(c, "en", err)
+				return utils.GetError(c, "en", err)
 			}
 
 			return c.JSON(http.StatusOK, resJSON)
@@ -89,7 +89,7 @@ func (handler *NotificationHandler) GetUnreadNotificationCount() echo.HandlerFun
 		// contextを渡す
 		resJSON, err := handler.Interactor.GetUnreadNotificationCount(ctx)
 		if err != nil {
-			return utils.GetErrorMassage(c, "en", err)
+			return utils.GetError(c, "en", err)
 		}
 
 		return c.JSON(http.StatusOK, resJSON)
@@ -109,7 +109,7 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 			// contextを渡す（セグメントなし）
 			err = handler.Interactor.MarkNotificationsRead(ctx)
 			if err != nil {
-				return utils.GetErrorMassage(c, "en", err)
+				return utils.GetError(c, "en", err)
 			}
 
 			return c.JSON(http.StatusOK, model.Response{
@@ -122,7 +122,7 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 		// contextを渡す
 		err = handler.Interactor.MarkNotificationsRead(ctx)
 		if err != nil {
-			return utils.GetErrorMassage(c, "en", err)
+			return utils.GetError(c, "en", err)
 		}
 
 		return c.JSON(http.StatusOK, model.Response{
