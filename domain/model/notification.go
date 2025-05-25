@@ -4,10 +4,11 @@ type (
 	// Notification ... entity for notification db result
 	Notification struct {
 		ID        int    `json:"id" db:"id"`
-		Title     string `json:"title" db:"title"`
 		UserId    string `json:"user_id" db:"user_id"`
+		Title     string `json:"title" db:"title"`
 		Message   string `json:"message" db:"message"`
 		IsRead    bool   `json:"is_read" db:"is_read"`
+		Type      string `json:"type" db:"type"`
 		CreatedAt string `json:"createdAt" db:"created_at"`
 		UpdatedAt string `json:"updatedAt" db:"updated_at"`
 	}

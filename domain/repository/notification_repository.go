@@ -87,6 +87,15 @@ func (repo *NotificationRepository) Update(ctx context.Context, in map[string]in
 		utils.LogError("Failed to add input metadata: %v", err)
 	}
 
-	//err = repo.SQLHandler.Update(ctx, in, NotificationTable, query)
+	// WHERE句の引数をinputにマージ
+	mergedInput := make(map[string]interface{})
+	for k, v := range in {
+		mergedInput[k] = v
+	}
+	for k, v := range args {
+		mergedInput[k] = v
+	}
+
+	err = repo.SQLHandler.Update(ctx, mergedInput, NotificationTable, query)
 	return
 }

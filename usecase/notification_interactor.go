@@ -34,8 +34,8 @@ func (interactor *NotificationInteractor) GetNotifications(ctx context.Context, 
 
 // GetUnreadNotificationCount ...
 func (interactor *NotificationInteractor) GetUnreadNotificationCount(ctx context.Context) (count model.NotificationCount, err error) {
-	whereClause := "unread = :unread"
-	whereArgs := map[string]interface{}{"unread": true}
+	whereClause := "is_read = :is_read"
+	whereArgs := map[string]interface{}{"is_read": false}
 	count, err = interactor.NotificationRepository.Count(ctx, whereClause, whereArgs)
 	if err != nil {
 		fmt.Println(err)
@@ -47,9 +47,9 @@ func (interactor *NotificationInteractor) GetUnreadNotificationCount(ctx context
 
 // MarkNotificationsRead ...
 func (interactor *NotificationInteractor) MarkNotificationsRead(ctx context.Context) (err error) {
-	clause := "unread = :unread"
-	args := map[string]interface{}{"unread": true}
-	err = interactor.NotificationRepository.Update(ctx, map[string]interface{}{"Unread": false}, clause, args)
+	clause := "is_read = :is_read"
+	args := map[string]interface{}{"is_read": false}
+	err = interactor.NotificationRepository.Update(ctx, map[string]interface{}{"is_read": true}, clause, args)
 
 	if err != nil {
 		return errors.NewBusinessError("10001E", err)

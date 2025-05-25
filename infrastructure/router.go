@@ -110,6 +110,7 @@ func Router() *echo.Echo {
 				Str("time", time.Now().Format(time.RFC3339Nano)).
 				Str("remote_ip", v.RemoteIP).
 				Str("method", v.Method).
+				Str("latency", v.Latency.String()).
 				Str("uri", v.URI).
 				Int("status", v.Status).
 				Str("user_agent", v.UserAgent)
