@@ -277,7 +277,7 @@ INSERT INTO notifications (
     is_read,
     type
 ) VALUES
-('user1', '新しいペットが入荷しました', '可愛い子猫が新しく入荷しました。ぜひチェックしてください！', false, 'new_pet'),
+('user1', '新しい子が増えました', '可愛い「あらいさん」が新しく増えました。ぜひチェックしてください！', false, 'new_pet'),
 ('user1', 'お気に入りペットの価格変更', 'お気に入り登録しているペットの価格が変更されました。', false, 'price_change'),
-('user2', '予約確認', 'ペット見学の予約が確定しました。', true, 'reservation'),
+('user2', '予約確認', 'お目当ての子：「うまちゃん」。', true, 'reservation'),
 ('user1', 'キャンペーン情報', '今週末限定のキャンペーンが開始されました！', false, 'campaign');

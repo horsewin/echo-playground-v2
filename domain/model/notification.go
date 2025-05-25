@@ -9,8 +9,8 @@ type (
 		Message   string `json:"message" db:"message"`
 		IsRead    bool   `json:"is_read" db:"is_read"`
 		Type      string `json:"type" db:"type"`
-		CreatedAt string `json:"createdAt" db:"created_at"`
-		UpdatedAt string `json:"updatedAt" db:"updated_at"`
+		CreatedAt string `json:"created_at" db:"created_at"`
+		UpdatedAt string `json:"updated_at" db:"updated_at"`
 	}
 	// Notifications ... array entity for notification
 	Notifications struct {

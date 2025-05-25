@@ -20,41 +20,6 @@ const (
 	projectName = "echo-playground-v2"
 )
 
-// // customHTTPErrorHandler handles errors and separates client-facing messages from internal logs
-// func customHTTPErrorHandler(err error, c echo.Context) {
-// 	fmt.Println("customHTTPErrorHandler")
-// 	// Get logger from context
-// 	logger := zerolog.Ctx(c.Request().Context())
-
-// 	// Prepare client-facing response
-// 	code := http.StatusInternalServerError
-// 	msg := "Internal server error" // Generic message for production
-
-// 	// If it's an Echo HTTP error, use its code and possibly its message
-// 	if he, ok := err.(*echo.HTTPError); ok {
-// 		code = he.Code
-// 		// For 4xx errors, we can be more specific with the client
-// 		if code >= 400 && code < 500 {
-// 			msg = fmt.Sprintf("%v", he.Message)
-// 		}
-// 	}
-
-// 	// In development, we might want to show more details
-// 	if os.Getenv("APP_ENV") == "development" {
-// 		msg = err.Error()
-// 	}
-
-// 	// Send response to client
-// 	// c.JSON() は第二引数にnilを渡すと空のJSONボディになることがあるので注意
-// 	// 適切なエラーレスポンス形式 (例: {"message": "エラーメッセージ"}) にする
-// 	if !c.Response().Committed { // レスポンスがまだ送信されていなければ送信
-// 		if err := c.JSON(code, customErrors.ErrorMessageDef{Code: code, Message: msg}); err != nil {
-// 			// JSON送信自体でエラーが起きた場合はさらにログを出すなど
-// 			logger.Error().Err(err).Msg("Failed to send error JSON response")
-// 		}
-// 	}
-// }
-
 // Router ...
 func Router() *echo.Echo {
 	// Setup Zerolog
@@ -62,9 +27,6 @@ func Router() *echo.Echo {
 
 	e := echo.New()
 	apiConfig := utils.NewAPIConfig()
-
-	// Set custom error handler
-	// e.HTTPErrorHandler = customHTTPErrorHandler
 
 	// X-Ray設定
 	if apiConfig.EnableTracing {
