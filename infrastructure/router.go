@@ -2,8 +2,6 @@ package infrastructure
 
 import (
 	"fmt"
-	"github.com/horsewin/echo-playground-v2/domain/model"
-	"net/http"
 	"os"
 	"time"
 
@@ -22,40 +20,40 @@ const (
 	projectName = "echo-playground-v2"
 )
 
-// customHTTPErrorHandler handles errors and separates client-facing messages from internal logs
-func customHTTPErrorHandler(err error, c echo.Context) {
-	// Get logger from context
-	logger := zerolog.Ctx(c.Request().Context())
+// // customHTTPErrorHandler handles errors and separates client-facing messages from internal logs
+// func customHTTPErrorHandler(err error, c echo.Context) {
+// 	fmt.Println("customHTTPErrorHandler")
+// 	// Get logger from context
+// 	logger := zerolog.Ctx(c.Request().Context())
 
-	// Prepare client-facing response
-	code := http.StatusInternalServerError
-	msg := "Internal server error" // Generic message for production
+// 	// Prepare client-facing response
+// 	code := http.StatusInternalServerError
+// 	msg := "Internal server error" // Generic message for production
 
-	// If it's an Echo HTTP error, use its code and possibly its message
-	if he, ok := err.(*echo.HTTPError); ok {
-		code = he.Code
-		// For 4xx errors, we can be more specific with the client
-		if code >= 400 && code < 500 {
-			msg = fmt.Sprintf("%v", he.Message)
-		}
-	}
+// 	// If it's an Echo HTTP error, use its code and possibly its message
+// 	if he, ok := err.(*echo.HTTPError); ok {
+// 		code = he.Code
+// 		// For 4xx errors, we can be more specific with the client
+// 		if code >= 400 && code < 500 {
+// 			msg = fmt.Sprintf("%v", he.Message)
+// 		}
+// 	}
 
-	// In development, we might want to show more details
-	if os.Getenv("APP_ENV") == "development" {
-		msg = err.Error()
-	}
+// 	// In development, we might want to show more details
+// 	if os.Getenv("APP_ENV") == "development" {
+// 		msg = err.Error()
+// 	}
 
-	// Send response to client
-	// c.JSON() は第二引数にnilを渡すと空のJSONボディになることがあるので注意
-	// 適切なエラーレスポンス形式 (例: {"message": "エラーメッセージ"}) にする
-	if !c.Response().Committed { // レスポンスがまだ送信されていなければ送信
-		if err := c.JSON(code, model.ErrorMessages{Code: code, Message: msg}); err != nil {
-			// JSON送信自体でエラーが起きた場合はさらにログを出すなど
-			logger.Error().Err(err).Msg("Failed to send error JSON response")
-		}
-	}
-
-}
+// 	// Send response to client
+// 	// c.JSON() は第二引数にnilを渡すと空のJSONボディになることがあるので注意
+// 	// 適切なエラーレスポンス形式 (例: {"message": "エラーメッセージ"}) にする
+// 	if !c.Response().Committed { // レスポンスがまだ送信されていなければ送信
+// 		if err := c.JSON(code, customErrors.ErrorMessageDef{Code: code, Message: msg}); err != nil {
+// 			// JSON送信自体でエラーが起きた場合はさらにログを出すなど
+// 			logger.Error().Err(err).Msg("Failed to send error JSON response")
+// 		}
+// 	}
+// }
 
 // Router ...
 func Router() *echo.Echo {
@@ -66,7 +64,7 @@ func Router() *echo.Echo {
 	apiConfig := utils.NewAPIConfig()
 
 	// Set custom error handler
-	e.HTTPErrorHandler = customHTTPErrorHandler
+	// e.HTTPErrorHandler = customHTTPErrorHandler
 
 	// X-Ray設定
 	if apiConfig.EnableTracing {
@@ -74,16 +72,21 @@ func Router() *echo.Echo {
 			DaemonAddr:     "127.0.0.1:2000", // X-Rayデーモンのアドレス
 			ServiceVersion: "2.14.0",
 		}); err != nil {
-			e.Logger.Errorf("Failed to configure X-Ray: %v", err)
+			logger.Error().Err(err).Msg("Failed to configure X-Ray")
 			// X-Ray設定失敗時はデフォルトの設定を使用
 			if configErr := xray.Configure(xray.Config{}); configErr != nil {
-				e.Logger.Fatalf("Failed to configure default X-Ray settings: %v", configErr)
+				logger.Error().Err(configErr).Msg("Failed to configure default X-Ray settings")
 			}
 		}
 		os.Setenv("AWS_XRAY_CONTEXT_MISSING", "LOG_ERROR")
 	}
 
+	// ----------------------------
+	// Middlewareの設定
+	// ----------------------------
+	// リクエストIDの生成
 	e.Use(middleware.RequestID())
+	// ログ出力設定
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:       true,
 		LogStatus:    true,
@@ -110,10 +113,16 @@ func Router() *echo.Echo {
 				Str("uri", v.URI).
 				Int("status", v.Status).
 				Str("user_agent", v.UserAgent)
+
+			// エラーが発生した場合、エラー情報をログに記録
 			if v.Error != nil {
-				event.Str("error", v.Error.Error())
+				event.Err(v.Error)
+				event.Msg("failed api request")
+
+				return v.Error
 			}
-			event.Msg("completed request")
+
+			event.Msg("completed api request")
 
 			return nil
 		},
@@ -121,8 +130,7 @@ func Router() *echo.Echo {
 			return c.Path() == "/healthcheck"
 		},
 	}))
-	e.Use(middleware.Recover())
-
+	// ハンドラの設定。この内部でロガーの設定をしてコンテキストにリクエストごとのロガーをセットする
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			rid := c.Response().Header().Get(echo.HeaderXRequestID)
@@ -180,13 +188,21 @@ func Router() *echo.Echo {
 		}
 	})
 
+	// recoveryミドルウェアの設定
+	e.Use(middleware.Recover())
+
+	// デフォルトで出力するバナーを隠す
 	e.HideBanner = true
+
+	// デフォルトで出力するポート番号はそのまま
 	e.HidePort = false
 
 	healthCheckHandler := handlers.NewHealthCheckHandler()
 	helloWorldHandler := handlers.NewHelloWorldHandler()
 
+	// ---------------------------
 	// APIルートの定義
+	// ---------------------------
 	e.GET("/", healthCheckHandler.HealthCheck())
 	e.GET("/healthcheck", healthCheckHandler.HealthCheck())
 	e.GET("/v1/helloworld", helloWorldHandler.SayHelloWorld())

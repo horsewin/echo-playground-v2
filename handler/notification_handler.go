@@ -3,13 +3,15 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/rs/zerolog"
+
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
+	"github.com/horsewin/echo-playground-v2/domain/model/errors"
 
 	"github.com/horsewin/echo-playground-v2/domain/repository"
 	"github.com/horsewin/echo-playground-v2/interface/database"
 	"github.com/horsewin/echo-playground-v2/usecase"
-	"github.com/horsewin/echo-playground-v2/utils"
 	"github.com/labstack/echo/v4"
 )
 
@@ -42,7 +44,7 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 			// contextを渡す（セグメントなし）
 			resJSON, err := handler.Interactor.GetNotifications(ctx, c.QueryParam("id"))
 			if err != nil {
-				return utils.GetError(c, "en", err)
+				return err
 			}
 
 			return c.JSON(http.StatusOK, resJSON)
@@ -59,7 +61,7 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 		// contextを渡す
 		resJSON, err := handler.Interactor.GetNotifications(ctx, id)
 		if err != nil {
-			return utils.GetError(c, "en", err)
+			return errors.NewEchoHTTPError(ctx, err)
 		}
 
 		return c.JSON(http.StatusOK, resJSON)
@@ -79,7 +81,7 @@ func (handler *NotificationHandler) GetUnreadNotificationCount() echo.HandlerFun
 			// contextを渡す（セグメントなし）
 			resJSON, err := handler.Interactor.GetUnreadNotificationCount(ctx)
 			if err != nil {
-				return utils.GetError(c, "en", err)
+				return errors.NewEchoHTTPError(ctx, err)
 			}
 
 			return c.JSON(http.StatusOK, resJSON)
@@ -89,7 +91,7 @@ func (handler *NotificationHandler) GetUnreadNotificationCount() echo.HandlerFun
 		// contextを渡す
 		resJSON, err := handler.Interactor.GetUnreadNotificationCount(ctx)
 		if err != nil {
-			return utils.GetError(c, "en", err)
+			return errors.NewEchoHTTPError(ctx, err)
 		}
 
 		return c.JSON(http.StatusOK, resJSON)
@@ -104,12 +106,13 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 		_, seg := xray.BeginSubsegment(ctx, "PostNotificationsRead")
 		if seg == nil {
 			// セグメントが作成できない場合はログに記録して処理を続行
-			c.Logger().Warn("Failed to begin subsegment: PostNotificationsRead")
+			logger := zerolog.Ctx(ctx)
+			logger.Warn().Msg("Failed to begin subsegment: PostNotificationsRead")
 
 			// contextを渡す（セグメントなし）
 			err = handler.Interactor.MarkNotificationsRead(ctx)
 			if err != nil {
-				return utils.GetError(c, "en", err)
+				return errors.NewEchoHTTPError(ctx, err)
 			}
 
 			return c.JSON(http.StatusOK, model.Response{
@@ -122,7 +125,7 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 		// contextを渡す
 		err = handler.Interactor.MarkNotificationsRead(ctx)
 		if err != nil {
-			return utils.GetError(c, "en", err)
+			return errors.NewEchoHTTPError(ctx, err)
 		}
 
 		return c.JSON(http.StatusOK, model.Response{

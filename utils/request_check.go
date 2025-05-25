@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/horsewin/echo-playground-v2/domain/model/errors"
 	"github.com/labstack/echo/v4"
 )
 
@@ -13,7 +14,7 @@ func HeaderCheck(context interface{}, headerName string, headerValue string) (er
 	c := context.(echo.Context)
 	currentHeader := c.Request().Header.Get(headerName)
 	if currentHeader != headerValue {
-		err = ConvertErrorMassage(nil, "00001E", nil)
+		err = errors.NewBusinessError("00001E", nil)
 	}
 	return
 }
@@ -25,7 +26,7 @@ func ClientIDCheck(context interface{}) (err error) {
 	c := context.(echo.Context)
 	clientID := c.Request().Header.Get(headerClientID)
 	if clientID != config.HeaderValue.ClientID {
-		err = ConvertErrorMassage(nil, "00002E", nil)
+		err = errors.NewBusinessError("00002E", nil)
 	}
 	return
 }

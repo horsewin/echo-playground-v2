@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
+	"github.com/horsewin/echo-playground-v2/domain/model/errors"
 	"github.com/horsewin/echo-playground-v2/domain/repository"
 	"github.com/horsewin/echo-playground-v2/utils"
 	"github.com/jinzhu/copier"
@@ -45,8 +46,7 @@ func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetF
 	// サブセグメントを作成
 	_app, err := interactor.PetRepository.Find(subCtx, filter)
 	if err != nil {
-		err = utils.ConvertErrorMassage(ctx, "10001E", err)
-		return
+		return pets, errors.NewBusinessError("10001E", err)
 	}
 
 	// ドメインモデルに変換
@@ -101,27 +101,23 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 	// like状態を取得
 	favMap, err := interactor.FavoriteRepository.FindByUserId(ctx, input.UserId)
 	if err != nil {
-		err = utils.ConvertErrorMassage(ctx, "10001E", err)
-		return
+		return errors.NewBusinessError("10001E", err)
 	}
 	if favMap[input.PetId].Value == input.Value {
-		err = utils.ConvertErrorMassage(ctx, "00001I", nil)
-		return
+		return errors.NewBusinessError("00001I", nil)
 	}
 
 	// 現在のペットモデルを取得
 	petData, err := interactor.PetRepository.Find(ctx, &model.PetFilter{ID: input.PetId})
 	if err != nil {
-		err = utils.ConvertErrorMassage(ctx, "10001E", err)
-		return
+		return errors.NewBusinessError("10001E", err)
 	}
 	var pet model.Pet
 	for _, p := range petData.Data {
 		if p.ID == input.PetId {
 			err = copier.Copy(&pet, &p)
 			if err != nil {
-				err = utils.ConvertErrorMassage(ctx, "10002E", err)
-				return
+				return errors.NewBusinessError("10002E", err)
 			}
 
 			// マッピングしきれない構造は手動でコピー
@@ -142,8 +138,7 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 	// TODO: トランザクションを使って更新処理を行う
 	err = interactor.PetRepository.Update(ctx, &pet)
 	if err != nil {
-		err = utils.ConvertErrorMassage(ctx, "10003E", err)
-		return
+		return errors.NewBusinessError("10003E", err)
 	}
 
 	if input.Value {
@@ -153,8 +148,7 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 			Value:  input.Value,
 		})
 		if err != nil {
-			err = utils.ConvertErrorMassage(ctx, "10004E", err)
-			return
+			return errors.NewBusinessError("10004E", err)
 		}
 	} else {
 		err = interactor.FavoriteRepository.Delete(ctx, &model.Favorite{
@@ -162,8 +156,7 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 			UserId: input.UserId,
 		})
 		if err != nil {
-			err = utils.ConvertErrorMassage(ctx, "10005E", err)
-			return
+			return errors.NewBusinessError("10005E", err)
 		}
 	}
 
@@ -184,8 +177,7 @@ func (interactor *PetInteractor) CreateReservation(ctx context.Context, input *m
 	// サブセグメントを作成
 	err = interactor.ReservationRepository.Create(ctx, input)
 	if err != nil {
-		err = utils.ConvertErrorMassage(ctx, "10003E", err)
-		return
+		return errors.NewBusinessError("10003E", err)
 	}
 	return
 }

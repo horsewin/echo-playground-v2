@@ -10,7 +10,6 @@ import (
 	"github.com/horsewin/echo-playground-v2/domain/repository"
 	"github.com/horsewin/echo-playground-v2/interface/database"
 	"github.com/horsewin/echo-playground-v2/usecase"
-	"github.com/horsewin/echo-playground-v2/utils"
 )
 
 // PetHandler ...
@@ -53,7 +52,7 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 			// Pass the context with X-Ray segment to the interactor
 			res, err := handler.Interactor.GetPets(subCtx, filter)
 			if err != nil {
-				return utils.GetError(c, "en", err)
+				return err
 			}
 
 			// resの中身をJSONにして返却
@@ -73,7 +72,7 @@ func (handler *PetHandler) GetPets() echo.HandlerFunc {
 		// Pass the context with X-Ray segment to the interactor
 		res, err := handler.Interactor.GetPets(ctx, filter)
 		if err != nil {
-			return utils.GetError(c, "en", err)
+			return err
 		}
 
 		// Add metadata to the segment
@@ -128,7 +127,7 @@ func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 			})
 
 			if err != nil {
-				return utils.GetError(c, "en", err)
+				return err
 			}
 
 			return c.JSON(http.StatusOK, model.Response{
@@ -174,7 +173,7 @@ func (handler *PetHandler) UpdateLike() echo.HandlerFunc {
 		})
 
 		if err != nil {
-			return utils.GetError(c, "en", err)
+			return err
 		}
 
 		return c.JSON(http.StatusOK, model.Response{
@@ -223,7 +222,7 @@ func (handler *PetHandler) Reservation() echo.HandlerFunc {
 			})
 
 			if err != nil {
-				return utils.GetError(c, "en", err)
+				return err
 			}
 
 			return c.JSON(http.StatusOK, model.Response{
@@ -273,7 +272,7 @@ func (handler *PetHandler) Reservation() echo.HandlerFunc {
 		})
 
 		if err != nil {
-			return utils.GetError(c, "en", err)
+			return err
 		}
 
 		return c.JSON(http.StatusOK, model.Response{

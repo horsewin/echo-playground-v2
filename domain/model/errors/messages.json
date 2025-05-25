@@ -1,7 +1,4 @@
-package utils
-
-// MessagesConfig ...
-var MessagesConfig = `{
+{
   "00001I": {
     "statusCode": 200,
     "messageCode": "00001I",
@@ -50,4 +47,4 @@ var MessagesConfig = `{
       "en": "DB update error."
     }
   }
-}`
+}
