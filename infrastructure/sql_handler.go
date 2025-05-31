@@ -334,15 +334,6 @@ func (handler *SQLHandler) Update(ctx context.Context, setParams map[string]inte
 		allParams[k] = v
 	}
 
-	// 実際に実行されるSQLとパラメータをログ出力
-	fmt.Printf("=== SQL DEBUG ===\n")
-	fmt.Printf("Query: %s\n", query)
-	fmt.Printf("SET Parameters: %+v\n", setParams)
-	fmt.Printf("WHERE Parameters (original): %+v\n", whereParams)
-	fmt.Printf("WHERE Parameters (adjusted): %+v\n", adjustedWhereParams)
-	fmt.Printf("All Parameters: %+v\n", allParams)
-	fmt.Printf("================\n")
-
 	// クエリをメタデータとして追加
 	if err := seg.AddMetadata("query", query); err != nil {
 		utils.LogError("Failed to add query metadata: %v", err)
@@ -400,15 +391,6 @@ func (handler *SQLHandler) updateWithoutXRay(setParams map[string]interface{}, t
 	for k, v := range adjustedWhereParams {
 		allParams[k] = v
 	}
-
-	// 実際に実行されるSQLとパラメータをログ出力
-	fmt.Printf("=== SQL DEBUG (No X-Ray) ===\n")
-	fmt.Printf("Query: %s\n", query)
-	fmt.Printf("SET Parameters: %+v\n", setParams)
-	fmt.Printf("WHERE Parameters (original): %+v\n", whereParams)
-	fmt.Printf("WHERE Parameters (adjusted): %+v\n", adjustedWhereParams)
-	fmt.Printf("All Parameters: %+v\n", allParams)
-	fmt.Printf("============================\n")
 
 	_, err := handler.Conn.NamedExec(query, allParams)
 	return err

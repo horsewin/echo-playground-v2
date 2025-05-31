@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/rs/zerolog"
@@ -14,6 +15,11 @@ import (
 	"github.com/horsewin/echo-playground-v2/usecase"
 	"github.com/labstack/echo/v4"
 )
+
+// NotificationReadRequest JSON形式のリクエストボディをバインドするための構造体
+type NotificationReadRequest struct {
+	ID string `json:"id" form:"id"`
+}
 
 // NotificationHandler ...
 type NotificationHandler struct {
@@ -109,8 +115,13 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 			logger := zerolog.Ctx(ctx)
 			logger.Warn().Msg("Failed to begin subsegment: PostNotificationsRead")
 
-			// notificationIdをクエリパラメータから取得
-			notificationId := c.QueryParam("id")
+			// JSONリクエストボディからnotificationIdを取得
+			var req NotificationReadRequest
+			if err := c.Bind(&req); err != nil {
+				return errors.NewEchoHTTPError(ctx, err)
+			}
+			notificationId := req.ID
+			fmt.Println("notificationId: ", notificationId)
 
 			// contextを渡す（セグメントなし）
 			err = handler.Interactor.MarkNotificationsRead(ctx, notificationId)
@@ -125,8 +136,13 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 		}
 		defer seg.Close(err)
 
-		// notificationIdをクエリパラメータから取得
-		notificationId := c.QueryParam("id")
+		// JSONリクエストボディからnotificationIdを取得
+		var req NotificationReadRequest
+		if err := c.Bind(&req); err != nil {
+			return errors.NewEchoHTTPError(ctx, err)
+		}
+		notificationId := req.ID
+		fmt.Println("notificationId: ", notificationId)
 
 		// Add metadata to the segment
 		if err := seg.AddMetadata("id", notificationId); err != nil {
