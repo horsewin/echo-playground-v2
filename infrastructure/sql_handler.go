@@ -290,36 +290,72 @@ func (handler *SQLHandler) createWithoutXRay(input map[string]interface{}, table
 }
 
 // Update ...
-func (handler *SQLHandler) Update(ctx context.Context, in map[string]interface{}, table string, whereClause string) error {
+func (handler *SQLHandler) Update(ctx context.Context, setParams map[string]interface{}, table string, whereClause string, whereParams map[string]interface{}) error {
 	// X-Rayサブセグメントを作成
 	subCtx, seg := xray.BeginSubsegment(ctx, "SQLHandler.Update")
 	if seg == nil {
 		// セグメントが作成できない場合はログに記録して処理を続行
 		utils.LogError("Failed to begin subsegment: SQLHandler.Update")
-		return handler.updateWithoutXRay(in, table, whereClause)
+		return handler.updateWithoutXRay(setParams, table, whereClause, whereParams)
 	}
 	defer seg.Close(nil)
 
-	columns, placeholders, _ := buildNamedParameters(in)
-
-	setClauses := make([]string, len(columns))
-	for i, col := range columns {
-		setClauses[i] = fmt.Sprintf("%s = %s", col, placeholders[i])
+	// SET句を構築（SET用パラメータのみ使用）
+	setColumns, setPlaceholders, _ := buildNamedParameters(setParams)
+	setClauses := make([]string, len(setColumns))
+	for i, col := range setColumns {
+		setClauses[i] = fmt.Sprintf("%s = %s", col, setPlaceholders[i])
 	}
 
-	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", table, strings.Join(setClauses, ","), whereClause)
+	// WHERE句のパラメータ名の重複を回避
+	adjustedWhereClause := whereClause
+	adjustedWhereParams := make(map[string]interface{})
+
+	for key, value := range whereParams {
+		// SET用パラメータと重複する場合は接尾辞を付ける
+		if _, exists := setParams[key]; exists {
+			newKey := key + "_where"
+			adjustedWhereParams[newKey] = value
+			// WHERE句内のプレースホルダーも置換
+			adjustedWhereClause = strings.ReplaceAll(adjustedWhereClause, ":"+key, ":"+newKey)
+		} else {
+			adjustedWhereParams[key] = value
+		}
+	}
+
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", table, strings.Join(setClauses, ","), adjustedWhereClause)
+
+	// 実行用にパラメータをマージ（重複回避済み）
+	allParams := make(map[string]interface{})
+	for k, v := range setParams {
+		allParams[k] = v
+	}
+	for k, v := range adjustedWhereParams {
+		allParams[k] = v
+	}
+
+	// 実際に実行されるSQLとパラメータをログ出力
+	fmt.Printf("=== SQL DEBUG ===\n")
+	fmt.Printf("Query: %s\n", query)
+	fmt.Printf("SET Parameters: %+v\n", setParams)
+	fmt.Printf("WHERE Parameters (original): %+v\n", whereParams)
+	fmt.Printf("WHERE Parameters (adjusted): %+v\n", adjustedWhereParams)
+	fmt.Printf("All Parameters: %+v\n", allParams)
+	fmt.Printf("================\n")
 
 	// クエリをメタデータとして追加
 	if err := seg.AddMetadata("query", query); err != nil {
 		utils.LogError("Failed to add query metadata: %v", err)
 	}
-	if err := seg.AddMetadata("input", in); err != nil {
-		utils.LogError("Failed to add input metadata: %v", err)
+	if err := seg.AddMetadata("setParams", setParams); err != nil {
+		utils.LogError("Failed to add setParams metadata: %v", err)
+	}
+	if err := seg.AddMetadata("whereParams", whereParams); err != nil {
+		utils.LogError("Failed to add whereParams metadata: %v", err)
 	}
 
-	fmt.Println(query)
+	_, err := handler.Conn.NamedExecContext(subCtx, query, allParams)
 
-	_, err := handler.Conn.NamedExecContext(subCtx, query, in)
 	if err != nil {
 		if addErr := seg.AddError(err); addErr != nil {
 			utils.LogError("Failed to add error to segment: %v", addErr)
@@ -330,19 +366,51 @@ func (handler *SQLHandler) Update(ctx context.Context, in map[string]interface{}
 }
 
 // updateWithoutXRay はX-Rayなしでクエリを実行するためのヘルパーメソッド
-func (handler *SQLHandler) updateWithoutXRay(in map[string]interface{}, table string, whereClause string) error {
-	columns, placeholders, _ := buildNamedParameters(in)
-
-	setClauses := make([]string, len(columns))
-	for i, col := range columns {
-		setClauses[i] = fmt.Sprintf("%s = %s", col, placeholders[i])
+func (handler *SQLHandler) updateWithoutXRay(setParams map[string]interface{}, table string, whereClause string, whereParams map[string]interface{}) error {
+	// SET句を構築（SET用パラメータのみ使用）
+	setColumns, setPlaceholders, _ := buildNamedParameters(setParams)
+	setClauses := make([]string, len(setColumns))
+	for i, col := range setColumns {
+		setClauses[i] = fmt.Sprintf("%s = %s", col, setPlaceholders[i])
 	}
 
-	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", table, strings.Join(setClauses, ","), whereClause)
+	// WHERE句のパラメータ名の重複を回避
+	adjustedWhereClause := whereClause
+	adjustedWhereParams := make(map[string]interface{})
 
-	fmt.Println(query)
+	for key, value := range whereParams {
+		// SET用パラメータと重複する場合は接尾辞を付ける
+		if _, exists := setParams[key]; exists {
+			newKey := key + "_where"
+			adjustedWhereParams[newKey] = value
+			// WHERE句内のプレースホルダーも置換
+			adjustedWhereClause = strings.ReplaceAll(adjustedWhereClause, ":"+key, ":"+newKey)
+		} else {
+			adjustedWhereParams[key] = value
+		}
+	}
 
-	_, err := handler.Conn.NamedExec(query, in)
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", table, strings.Join(setClauses, ","), adjustedWhereClause)
+
+	// 実行用にパラメータをマージ（重複回避済み）
+	allParams := make(map[string]interface{})
+	for k, v := range setParams {
+		allParams[k] = v
+	}
+	for k, v := range adjustedWhereParams {
+		allParams[k] = v
+	}
+
+	// 実際に実行されるSQLとパラメータをログ出力
+	fmt.Printf("=== SQL DEBUG (No X-Ray) ===\n")
+	fmt.Printf("Query: %s\n", query)
+	fmt.Printf("SET Parameters: %+v\n", setParams)
+	fmt.Printf("WHERE Parameters (original): %+v\n", whereParams)
+	fmt.Printf("WHERE Parameters (adjusted): %+v\n", adjustedWhereParams)
+	fmt.Printf("All Parameters: %+v\n", allParams)
+	fmt.Printf("============================\n")
+
+	_, err := handler.Conn.NamedExec(query, allParams)
 	return err
 }
 

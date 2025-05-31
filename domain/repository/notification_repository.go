@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
@@ -76,6 +77,12 @@ func (repo *NotificationRepository) Update(ctx context.Context, in map[string]in
 	_, seg := xray.BeginSubsegment(ctx, "NotificationRepository.Update")
 	defer seg.Close(err)
 
+	// デバッグログ: パラメータマージ前の状態
+	fmt.Printf("=== NotificationRepository.Update DEBUG ===\n")
+	fmt.Printf("Query: %s\n", query)
+	fmt.Printf("SET parameters (in): %+v\n", in)
+	fmt.Printf("WHERE parameters (args): %+v\n", args)
+
 	// メタデータを追加
 	if err := seg.AddMetadata("query", query); err != nil {
 		utils.LogError("Failed to add query metadata: %v", err)
@@ -87,15 +94,7 @@ func (repo *NotificationRepository) Update(ctx context.Context, in map[string]in
 		utils.LogError("Failed to add input metadata: %v", err)
 	}
 
-	// WHERE句の引数をinputにマージ
-	mergedInput := make(map[string]interface{})
-	for k, v := range in {
-		mergedInput[k] = v
-	}
-	for k, v := range args {
-		mergedInput[k] = v
-	}
-
-	err = repo.SQLHandler.Update(ctx, mergedInput, NotificationTable, query)
+	// 新しいSQLHandlerのシグネチャに合わせて、SET用とWHERE用のパラメータを分離して渡す
+	err = repo.SQLHandler.Update(ctx, in, NotificationTable, query, args)
 	return
 }

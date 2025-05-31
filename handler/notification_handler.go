@@ -109,8 +109,11 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 			logger := zerolog.Ctx(ctx)
 			logger.Warn().Msg("Failed to begin subsegment: PostNotificationsRead")
 
+			// notificationIdをクエリパラメータから取得
+			notificationId := c.QueryParam("id")
+
 			// contextを渡す（セグメントなし）
-			err = handler.Interactor.MarkNotificationsRead(ctx)
+			err = handler.Interactor.MarkNotificationsRead(ctx, notificationId)
 			if err != nil {
 				return errors.NewEchoHTTPError(ctx, err)
 			}
@@ -122,8 +125,16 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 		}
 		defer seg.Close(err)
 
+		// notificationIdをクエリパラメータから取得
+		notificationId := c.QueryParam("id")
+
+		// Add metadata to the segment
+		if err := seg.AddMetadata("id", notificationId); err != nil {
+			c.Logger().Errorf("Failed to add id metadata: %v", err)
+		}
+
 		// contextを渡す
-		err = handler.Interactor.MarkNotificationsRead(ctx)
+		err = handler.Interactor.MarkNotificationsRead(ctx, notificationId)
 		if err != nil {
 			return errors.NewEchoHTTPError(ctx, err)
 		}

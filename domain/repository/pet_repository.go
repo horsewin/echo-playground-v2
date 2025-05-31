@@ -93,8 +93,7 @@ func (repo *PetRepository) Update(ctx context.Context, input *model.Pet) (err er
 
 	// Petドメインモデルをリポジトリモデルに変換
 	now := time.Now()
-	in := map[string]interface{}{
-		"id":               input.ID,
+	setParams := map[string]interface{}{
 		"name":             input.Name,
 		"breed":            input.Breed,
 		"gender":           input.Gender,
@@ -109,11 +108,14 @@ func (repo *PetRepository) Update(ctx context.Context, input *model.Pet) (err er
 		"updated_at":       &now,
 	}
 
-	// クエリ組み立て
+	// WHERE句のパラメータ
 	whereClause := "id = :id"
+	whereParams := map[string]interface{}{
+		"id": input.ID,
+	}
 
 	// SQLHandlerを呼び出し
-	err = repo.SQLHandler.Update(subCtx, in, PetsTable, whereClause)
+	err = repo.SQLHandler.Update(subCtx, setParams, PetsTable, whereClause, whereParams)
 
 	return
 }

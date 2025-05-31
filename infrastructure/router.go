@@ -180,8 +180,8 @@ func Router() *echo.Echo {
 		e.POST("/v1/pets/:id/reservation", petHandler.Reservation())
 
 		e.GET("/v1/notifications", notificationHandler.GetNotifications())
-		e.GET("/v1/notifications/count", notificationHandler.GetUnreadNotificationCount())
 		e.POST("/v1/notifications/read", notificationHandler.PostNotificationsRead())
+		e.GET("/v1/notifications/count", notificationHandler.GetUnreadNotificationCount())
 
 	}
 

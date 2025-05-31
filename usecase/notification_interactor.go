@@ -46,9 +46,23 @@ func (interactor *NotificationInteractor) GetUnreadNotificationCount(ctx context
 }
 
 // MarkNotificationsRead ...
-func (interactor *NotificationInteractor) MarkNotificationsRead(ctx context.Context) (err error) {
-	clause := "is_read = :is_read"
-	args := map[string]interface{}{"is_read": false}
+func (interactor *NotificationInteractor) MarkNotificationsRead(ctx context.Context, notificationId string) (err error) {
+	var clause string
+	var args map[string]interface{}
+
+	if notificationId != "" {
+		// 特定の通知のみを既読にする
+		clause = "id = :id AND is_read = :is_read"
+		args = map[string]interface{}{
+			"id":      notificationId,
+			"is_read": false,
+		}
+	} else {
+		// 全ての未読通知を既読にする（従来の動作）
+		clause = "is_read = :is_read"
+		args = map[string]interface{}{"is_read": false}
+	}
+
 	err = interactor.NotificationRepository.Update(ctx, map[string]interface{}{"is_read": true}, clause, args)
 
 	if err != nil {
