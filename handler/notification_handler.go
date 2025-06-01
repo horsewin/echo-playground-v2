@@ -74,36 +74,6 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 	}
 }
 
-// GetUnreadNotificationCount ...
-func (handler *NotificationHandler) GetUnreadNotificationCount() echo.HandlerFunc {
-	return func(c echo.Context) (err error) {
-		// サブセグメントを作成
-		ctx := c.Request().Context()
-		_, seg := xray.BeginSubsegment(ctx, "GetUnreadNotificationCount")
-		if seg == nil {
-			// セグメントが作成できない場合はログに記録して処理を続行
-			c.Logger().Warn("Failed to begin subsegment: GetUnreadNotificationCount")
-
-			// contextを渡す（セグメントなし）
-			resJSON, err := handler.Interactor.GetUnreadNotificationCount(ctx)
-			if err != nil {
-				return errors.NewEchoHTTPError(ctx, err)
-			}
-
-			return c.JSON(http.StatusOK, resJSON)
-		}
-		defer seg.Close(err)
-
-		// contextを渡す
-		resJSON, err := handler.Interactor.GetUnreadNotificationCount(ctx)
-		if err != nil {
-			return errors.NewEchoHTTPError(ctx, err)
-		}
-
-		return c.JSON(http.StatusOK, resJSON)
-	}
-}
-
 // PostNotificationsRead ...
 func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {

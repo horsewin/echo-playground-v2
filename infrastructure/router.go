@@ -181,7 +181,6 @@ func Router() *echo.Echo {
 
 		e.GET("/v1/notifications", notificationHandler.GetNotifications())
 		e.POST("/v1/notifications/read", notificationHandler.PostNotificationsRead())
-		e.GET("/v1/notifications/count", notificationHandler.GetUnreadNotificationCount())
 
 	}
 

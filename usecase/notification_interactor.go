@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/domain/model/errors"
@@ -27,19 +26,6 @@ func (interactor *NotificationInteractor) GetNotifications(ctx context.Context, 
 		if err != nil {
 			return app, errors.NewBusinessError("10001E", err)
 		}
-	}
-
-	return
-}
-
-// GetUnreadNotificationCount ...
-func (interactor *NotificationInteractor) GetUnreadNotificationCount(ctx context.Context) (count model.NotificationCount, err error) {
-	whereClause := "is_read = :is_read"
-	whereArgs := map[string]interface{}{"is_read": false}
-	count, err = interactor.NotificationRepository.Count(ctx, whereClause, whereArgs)
-	if err != nil {
-		fmt.Println(err)
-		return count, errors.NewBusinessError("10001E", err)
 	}
 
 	return
