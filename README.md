@@ -22,7 +22,6 @@ APIサーバーとDB(Postgres)の接続はO/Rマッパライブラリであるsq
 
 2. 通知サービス（`/notifications`）
    - `GET /notifications` - 通知一覧の取得
-   - `GET /notifications/count` - 未読通知数の取得
    - `POST /notifications/read` - 通知の既読化
 
 ## 利用想定
