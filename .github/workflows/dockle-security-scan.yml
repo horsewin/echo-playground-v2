@@ -38,15 +38,15 @@ jobs:
     - name: Run Dockle security scan
       run: |
         echo "===== Dockle security scan started on $(date) ====="
-        dockle --exit-code 1 --exit-level FATAL --input docker ${APP_NAME}:${IMAGE_TAG}
+        dockle --exit-code 1 --exit-level FATAL ${APP_NAME}:${IMAGE_TAG}
         echo "===== Dockle security scan completed on $(date) ====="
         
     - name: Generate Dockle report
       if: always()
       run: |
         echo "===== Generating Dockle report on $(date) ====="
-        dockle --format json --output dockle-report.json --input docker ${APP_NAME}:${IMAGE_TAG} || true
-        dockle --format table --input docker ${APP_NAME}:${IMAGE_TAG} || true
+        dockle --format json --output dockle-report.json ${APP_NAME}:${IMAGE_TAG} || true
+        dockle --format table ${APP_NAME}:${IMAGE_TAG} || true
         
     - name: Upload Dockle report
       if: always()
