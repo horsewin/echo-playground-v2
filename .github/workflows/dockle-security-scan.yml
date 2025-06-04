@@ -16,9 +16,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
     - name: Set image tag
       run: |
         echo "IMAGE_TAG=$(echo ${{ github.sha }} | cut -c 1-7)" >> $GITHUB_ENV
@@ -27,7 +24,7 @@ jobs:
       run: |
         echo "===== Docker Build started on $(date) ====="
         echo "Building the Docker image..."
-        docker buildx build -f Dockerfile -t ${APP_NAME}:latest .
+        docker build -f Dockerfile -t ${APP_NAME}:latest .
         docker tag ${APP_NAME}:latest ${APP_NAME}:${IMAGE_TAG}
         docker image ls
         echo "Completed the ${APP_NAME} Docker image build."
@@ -41,7 +38,7 @@ jobs:
     - name: Run Dockle security scan
       run: |
         echo "===== Dockle security scan started on $(date) ====="
-        dockle --exit-code 1 --exit-level WARN --input docker ${APP_NAME}:${IMAGE_TAG}
+        dockle --exit-code 1 --exit-level FATAL --input docker ${APP_NAME}:${IMAGE_TAG}
         echo "===== Dockle security scan completed on $(date) ====="
         
     - name: Generate Dockle report
