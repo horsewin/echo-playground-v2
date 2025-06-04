@@ -2,7 +2,7 @@ name: Dockle Security Scan
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   DOCKER_BUILDKIT: "1"
@@ -11,7 +11,7 @@ env:
 jobs:
   dockle-scan:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
