@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -42,12 +41,12 @@ func main() {
 	}()
 
 	<-quit
-	fmt.Println("Caught SIGTERM, shutting down")
+	log.Info().Msg("Caught SIGTERM, shutting down")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := router.Shutdown(ctx); err != nil {
 		log.Fatal().Err(err).Msg("Error during server shutdown")
 	}
-	fmt.Println("Exited app")
+	log.Info().Msg("Exited app")
 }

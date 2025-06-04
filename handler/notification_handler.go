@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/rs/zerolog"
@@ -91,7 +90,8 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 				return errors.NewEchoHTTPError(ctx, err)
 			}
 			notificationId := req.ID
-			fmt.Println("notificationId: ", notificationId)
+			logger := zerolog.Ctx(ctx)
+			logger.Debug().Str("notificationId", notificationId).Msg("Processing notification read request")
 
 			// contextを渡す（セグメントなし）
 			err = handler.Interactor.MarkNotificationsRead(ctx, notificationId)
@@ -112,7 +112,8 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 			return errors.NewEchoHTTPError(ctx, err)
 		}
 		notificationId := req.ID
-		fmt.Println("notificationId: ", notificationId)
+		logger := zerolog.Ctx(ctx)
+		logger.Debug().Str("notificationId", notificationId).Msg("Processing notification read request")
 
 		// Add metadata to the segment
 		if err := seg.AddMetadata("id", notificationId); err != nil {

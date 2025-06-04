@@ -60,7 +60,7 @@ func NewSQLHandler() *SQLHandler {
 		}
 
 		// 接続成功
-		fmt.Println("DB connected successfully")
+		log.Println("DB connected successfully")
 
 		sqlHandlerInstance = &SQLHandler{Conn: conn}
 	})
@@ -284,7 +284,6 @@ func (handler *SQLHandler) createWithoutXRay(input map[string]interface{}, table
 	// クエリを構築
 	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, strings.Join(columns, ","), strings.Join(placeholders, ","))
 
-	fmt.Println(query)
 	_, err := handler.Conn.NamedExec(query, input)
 	return err
 }
@@ -424,8 +423,6 @@ func (handler *SQLHandler) Delete(ctx context.Context, in map[string]interface{}
 		utils.LogError("Failed to add input metadata: %v", err)
 	}
 
-	fmt.Println(query)
-
 	_, err := handler.Conn.NamedExecContext(subCtx, query, values)
 	if err != nil {
 		if addErr := seg.AddError(err); addErr != nil {
@@ -446,8 +443,6 @@ func (handler *SQLHandler) deleteWithoutXRay(in map[string]interface{}, table st
 	}
 
 	query := fmt.Sprintf("DELETE FROM %s WHERE %s", table, strings.Join(whereClauses, ","))
-
-	fmt.Println(query)
 
 	_, err := handler.Conn.NamedExec(query, values)
 	return err
