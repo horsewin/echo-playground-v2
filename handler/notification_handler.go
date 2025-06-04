@@ -90,7 +90,6 @@ func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 				return errors.NewEchoHTTPError(ctx, err)
 			}
 			notificationId := req.ID
-			logger := zerolog.Ctx(ctx)
 			logger.Debug().Str("notificationId", notificationId).Msg("Processing notification read request")
 
 			// contextを渡す（セグメントなし）
