@@ -52,7 +52,8 @@ func (repo *ReservationRepository) Create(ctx context.Context, input *model.Rese
 		"email":     input.Email,
 		"user_name": input.FullName,
 		// yyyymmdd形式をdatetimeに変換
-		"reservation_datetime": rsvDatetime,
+		"reservation_date_time": rsvDatetime,
+		"status":                "pending", // デフォルトステータスを設定
 	}
 
 	// リポジトリモデルをDBに保存
