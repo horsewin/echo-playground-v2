@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS reservations
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- likeを管理するテーブル
+-- お気に入りを管理するテーブル
 CREATE TABLE IF NOT EXISTS favorites
 (
     -- 予約ごとに一意のIDを持たせる (UUID, SERIALなど)
@@ -72,6 +72,19 @@ CREATE TABLE IF NOT EXISTS notifications
     -- 通知レコードが更新された日時
     updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+---
+
+-- Indexes for reservations table
+CREATE INDEX idx_reservations_pet_id ON reservations(pet_id);
+CREATE INDEX idx_reservations_user_id ON reservations(user_id);
+CREATE INDEX idx_reservations_status ON reservations(status);
+-- Indexes for favorites table
+CREATE INDEX idx_favorites_user_id ON favorites(user_id);
+-- Composite unique index to ensure one favorite per user-pet combination
+CREATE UNIQUE INDEX idx_favorites_user_pet ON favorites(user_id, pet_id);
+-- Indexes for notifications table
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 
 ---
 
