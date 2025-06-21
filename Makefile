@@ -9,7 +9,7 @@ BINARY_NAME   = main
 # メインのエントリーポイント
 MAIN_PACKAGE  = ./main.go
 
-.PHONY: all validate build test run clean update-deps build-linux
+.PHONY: all validate build test test-verbose test-coverage test-coverage-html run clean update-deps build-linux
 
 # allターゲットでは「validate → build → run」を一括実行
 all: validate build run
@@ -44,11 +44,25 @@ run:
 	@$(BUILD_DIR)/$(BINARY_NAME)
 
 ##
-# テスト (validate でも実行しているが、個別でも呼び出せるように)
+# テスト関連
 ##
 test:
 	@echo "==> Running tests"
+	@$(GOCMD) test ./...
+
+test-verbose:
+	@echo "==> Running tests (verbose)"
 	@$(GOCMD) test -v ./...
+
+test-coverage:
+	@echo "==> Running tests with coverage"
+	@$(GOCMD) test -cover ./...
+
+test-coverage-html:
+	@echo "==> Running tests with coverage and generating HTML report"
+	@$(GOCMD) test -coverprofile=coverage.out ./...
+	@$(GOCMD) tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
 
 ##
 # 不要ファイルの削除
