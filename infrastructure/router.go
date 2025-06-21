@@ -20,36 +20,28 @@ const (
 	projectName = "echo-playground-v2"
 )
 
-// Router ...
-func Router() *echo.Echo {
-	// Setup Zerolog
-	logger := zerolog.New(os.Stdout)
-
-	e := echo.New()
-	apiConfig := utils.NewAPIConfig()
-
-	// X-Ray設定
-	if apiConfig.EnableTracing {
-		if err := xray.Configure(xray.Config{
-			DaemonAddr:     "127.0.0.1:2000", // X-Rayデーモンのアドレス
-			ServiceVersion: "2.14.0",
-		}); err != nil {
-			logger.Error().Err(err).Msg("Failed to configure X-Ray")
-			// X-Ray設定失敗時はデフォルトの設定を使用
-			if configErr := xray.Configure(xray.Config{}); configErr != nil {
-				logger.Error().Err(configErr).Msg("Failed to configure default X-Ray settings")
-			}
-		}
-		os.Setenv("AWS_XRAY_CONTEXT_MISSING", "LOG_ERROR")
+// configureXRay X-Rayの設定を行う
+func configureXRay(apiConfig *utils.APIConfig, logger zerolog.Logger) {
+	if !apiConfig.EnableTracing {
+		return
 	}
 
-	// ----------------------------
-	// Middlewareの設定
-	// ----------------------------
-	// リクエストIDの生成
-	e.Use(middleware.RequestID())
-	// ログ出力設定
-	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+	if err := xray.Configure(xray.Config{
+		DaemonAddr:     "127.0.0.1:2000", // X-Rayデーモンのアドレス
+		ServiceVersion: "2.14.0",
+	}); err != nil {
+		logger.Error().Err(err).Msg("Failed to configure X-Ray")
+		// X-Ray設定失敗時はデフォルトの設定を使用
+		if configErr := xray.Configure(xray.Config{}); configErr != nil {
+			logger.Error().Err(configErr).Msg("Failed to configure default X-Ray settings")
+		}
+	}
+	os.Setenv("AWS_XRAY_CONTEXT_MISSING", "LOG_ERROR")
+}
+
+// setupRequestLogger リクエストロガーミドルウェアを設定
+func setupRequestLogger(logger zerolog.Logger) echo.MiddlewareFunc {
+	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:       true,
 		LogStatus:    true,
 		LogUserAgent: true,
@@ -92,9 +84,12 @@ func Router() *echo.Echo {
 		Skipper: func(c echo.Context) bool {
 			return c.Path() == "/healthcheck"
 		},
-	}))
-	// ハンドラの設定。この内部でロガーの設定をしてコンテキストにリクエストごとのロガーをセットする
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+	})
+}
+
+// setupXRayMiddleware X-Rayミドルウェアを設定
+func setupXRayMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			rid := c.Response().Header().Get(echo.HeaderXRequestID)
 			// Create request-specific logger with request details
@@ -149,17 +144,11 @@ func Router() *echo.Echo {
 
 			return err
 		}
-	})
+	}
+}
 
-	// recoveryミドルウェアの設定
-	e.Use(middleware.Recover())
-
-	// デフォルトで出力するバナーを隠す
-	e.HideBanner = true
-
-	// デフォルトで出力するポート番号はそのまま
-	e.HidePort = false
-
+// registerRoutes ルートを登録する
+func registerRoutes(e *echo.Echo) {
 	healthCheckHandler := handlers.NewHealthCheckHandler()
 	helloWorldHandler := handlers.NewHelloWorldHandler()
 
@@ -183,6 +172,42 @@ func Router() *echo.Echo {
 		e.POST("/v1/notifications/read", notificationHandler.PostNotificationsRead())
 
 	}
+}
+
+// Router ...
+func Router() *echo.Echo {
+	// Setup
+	logger := zerolog.New(os.Stdout)
+	e := echo.New()
+	apiConfig := utils.NewAPIConfig()
+
+	// Configure X-Ray
+	configureXRay(apiConfig, logger)
+
+	// Configure Echo settings
+	e.HideBanner = true
+	e.HidePort = false
+
+	// Setup middlewares
+	setupMiddlewares(e, logger)
+
+	// Register routes
+	registerRoutes(e)
 
 	return e
+}
+
+// setupMiddlewares ミドルウェアを設定
+func setupMiddlewares(e *echo.Echo, logger zerolog.Logger) {
+	// リクエストIDの生成
+	e.Use(middleware.RequestID())
+
+	// ログ出力設定
+	e.Use(setupRequestLogger(logger))
+
+	// X-Rayミドルウェア
+	e.Use(setupXRayMiddleware())
+
+	// recoveryミドルウェアの設定
+	e.Use(middleware.Recover())
 }
