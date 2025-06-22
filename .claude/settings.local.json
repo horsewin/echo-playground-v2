@@ -6,6 +6,7 @@
       "Bash(make:*)",
       "Bash(ls:*)",
       "Bash(go build:*)",
+      "Bash(git pull:*)",
       "Bash(go fmt:*)",
       "Bash(go vet:*)",
       "Bash(git checkout:*)",
@@ -16,7 +17,8 @@
       "Bash(go test:*)",
       "Bash(unset:*)",
       "Bash(/usr/bin/make test)",
-      "Bash(/usr/bin/make test-coverage)"
+      "Bash(/usr/bin/make test-coverage)",
+      "Bash(/usr/bin/make validate)"      
     ],
     "deny": []
   }
