@@ -5,7 +5,11 @@
       "Bash(mkdir:*)",
       "Bash(make:*)",
       "Bash(ls:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(git pull:*)",
+      "Bash(/usr/bin/make validate)",
+      "Bash(AWS_XRAY_SDK_DISABLED=true go test ./usecase/... -v)",
+      "Bash(AWS_XRAY_SDK_DISABLED=true go test ./usecase/... -cover)"
     ],
     "deny": []
   }

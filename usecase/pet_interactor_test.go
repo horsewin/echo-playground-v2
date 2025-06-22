@@ -18,12 +18,6 @@ import (
 // 注意: repository.petsは非公開型のため、完全なモックは作成できない
 // そのため、PetInteractorのGetPetsメソッドの完全なテストは統合テストで実施することを推奨
 
-// テストヘルパー関数：X-Rayセグメントのモック
-func withMockXRaySegment(ctx context.Context) context.Context {
-	// X-Rayを無効化した状態でコンテキストを返す
-	// テスト環境ではX-Rayは使用しない
-	return ctx
-}
 
 // PetInteractorの基本的なインスタンス作成テスト
 func TestPetInteractor_NewInstance(t *testing.T) {
@@ -109,7 +103,7 @@ func TestPetInteractor_CreateReservation_Success(t *testing.T) {
 		ReservationDate: "2023-12-01",
 	}
 
-	ctx := withMockXRaySegment(context.Background())
+	ctx := testContext()
 	err := interactor.CreateReservation(ctx, input)
 
 	if err != nil {
@@ -133,7 +127,7 @@ func TestPetInteractor_CreateReservation_Error(t *testing.T) {
 		UserId: "user456",
 	}
 
-	ctx := withMockXRaySegment(context.Background())
+	ctx := testContext()
 	err := interactor.CreateReservation(ctx, input)
 
 	if err == nil {
@@ -176,7 +170,7 @@ func TestPetInteractor_UpdateLikeCount_DuplicateLike(t *testing.T) {
 		Value:  true, // 重複いいね
 	}
 
-	ctx := withMockXRaySegment(context.Background())
+	ctx := testContext()
 	err := interactor.UpdateLikeCount(ctx, input)
 
 	if err == nil {
@@ -212,7 +206,7 @@ func TestPetInteractor_UpdateLikeCount_FavoriteRepositoryError(t *testing.T) {
 		Value:  true,
 	}
 
-	ctx := withMockXRaySegment(context.Background())
+	ctx := testContext()
 	err := interactor.UpdateLikeCount(ctx, input)
 
 	if err == nil {
