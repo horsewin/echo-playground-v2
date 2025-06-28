@@ -45,7 +45,16 @@ func NewSQLHandler() *SQLHandler {
 		PASS := c.Postgres.Password
 		DBNAME := c.Postgres.DBName
 		PROTOCOL := "host=" + os.Getenv("DB_HOST") + " port=5432"
-		CONNECT := "user=" + USER + " password=" + PASS + " " + PROTOCOL + " dbname=" + DBNAME + " sslmode=disable"
+
+		// localhostのDBの場合はSSLを無効化
+		var sslModeValue string
+		if os.Getenv("DB_HOST") == "localhost" {
+			sslModeValue = "disable"
+		} else {
+			sslModeValue = "require" // 本番環境ではSSLを有効にする
+		}
+
+		CONNECT := "user=" + USER + " password=" + PASS + " " + PROTOCOL + " dbname=" + DBNAME + " sslmode=" + sslModeValue
 
 		// X-Ray対応のSQLコンテキストを作成
 		db, err := xray.SQLContext(dbType, CONNECT)
