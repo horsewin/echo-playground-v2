@@ -11,11 +11,11 @@ import (
 
 // MockNotificationRepository はテスト用のモックリポジトリ
 type MockNotificationRepository struct {
-	FindResult      model.Notifications
-	FindError       error
-	FindAllResult   model.Notifications
-	FindAllError    error
-	UpdateError     error
+	FindResult    model.Notifications
+	FindError     error
+	FindAllResult model.Notifications
+	FindAllError  error
+	UpdateError   error
 }
 
 func (m *MockNotificationRepository) Find(ctx context.Context, id string) (model.Notifications, error) {
@@ -43,7 +43,7 @@ func TestNotificationInteractor_GetNotifications_WithID(t *testing.T) {
 		},
 		FindError: nil,
 	}
-	
+
 	interactor := &NotificationInteractor{
 		NotificationRepository: mockRepo,
 	}
@@ -55,11 +55,11 @@ func TestNotificationInteractor_GetNotifications_WithID(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 		return
 	}
-	
+
 	if len(result.Data) != 1 {
 		t.Errorf("expected 1 notification but got %d", len(result.Data))
 	}
-	
+
 	if result.Data[0].ID != 1 {
 		t.Errorf("expected notification ID 1 but got %d", result.Data[0].ID)
 	}
@@ -75,7 +75,7 @@ func TestNotificationInteractor_GetNotifications_WithoutID(t *testing.T) {
 		},
 		FindAllError: nil,
 	}
-	
+
 	interactor := &NotificationInteractor{
 		NotificationRepository: mockRepo,
 	}
@@ -87,7 +87,7 @@ func TestNotificationInteractor_GetNotifications_WithoutID(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 		return
 	}
-	
+
 	if len(result.Data) != 2 {
 		t.Errorf("expected 2 notifications but got %d", len(result.Data))
 	}
@@ -97,7 +97,7 @@ func TestNotificationInteractor_GetNotifications_FindError(t *testing.T) {
 	mockRepo := &MockNotificationRepository{
 		FindError: errors.New("database error"),
 	}
-	
+
 	interactor := &NotificationInteractor{
 		NotificationRepository: mockRepo,
 	}
@@ -109,13 +109,13 @@ func TestNotificationInteractor_GetNotifications_FindError(t *testing.T) {
 		t.Errorf("expected error but got nil")
 		return
 	}
-	
+
 	var be business_errors.BusinessError
 	if !errors.As(err, &be) {
 		t.Errorf("expected BusinessError but got %T", err)
 		return
 	}
-	
+
 	if be.Code() != "10001E" {
 		t.Errorf("expected error code 10001E but got %s", be.Code())
 	}
@@ -125,7 +125,7 @@ func TestNotificationInteractor_MarkNotificationsRead_WithID(t *testing.T) {
 	mockRepo := &MockNotificationRepository{
 		UpdateError: nil,
 	}
-	
+
 	interactor := &NotificationInteractor{
 		NotificationRepository: mockRepo,
 	}
@@ -142,7 +142,7 @@ func TestNotificationInteractor_MarkNotificationsRead_WithoutID(t *testing.T) {
 	mockRepo := &MockNotificationRepository{
 		UpdateError: nil,
 	}
-	
+
 	interactor := &NotificationInteractor{
 		NotificationRepository: mockRepo,
 	}
@@ -159,7 +159,7 @@ func TestNotificationInteractor_MarkNotificationsRead_UpdateError(t *testing.T) 
 	mockRepo := &MockNotificationRepository{
 		UpdateError: errors.New("database error"),
 	}
-	
+
 	interactor := &NotificationInteractor{
 		NotificationRepository: mockRepo,
 	}
@@ -171,13 +171,13 @@ func TestNotificationInteractor_MarkNotificationsRead_UpdateError(t *testing.T) 
 		t.Errorf("expected error but got nil")
 		return
 	}
-	
+
 	var be business_errors.BusinessError
 	if !errors.As(err, &be) {
 		t.Errorf("expected BusinessError but got %T", err)
 		return
 	}
-	
+
 	if be.Code() != "10001E" {
 		t.Errorf("expected error code 10001E but got %s", be.Code())
 	}

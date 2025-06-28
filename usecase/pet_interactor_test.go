@@ -18,13 +18,13 @@ import (
 // 注意: repository.petsは非公開型のため、完全なモックは作成できない
 // そのため、PetInteractorのGetPetsメソッドの完全なテストは統合テストで実施することを推奨
 
-
 // PetInteractorの基本的なインスタンス作成テスト
 func TestPetInteractor_NewInstance(t *testing.T) {
 	interactor := &PetInteractor{}
-	
-	if interactor == nil {
-		t.Error("PetInteractor should not be nil")
+
+	// インスタンスが作成されたことを確認
+	if interactor.PetRepository != nil {
+		t.Error("PetRepository should be nil when not initialized")
 	}
 }
 
@@ -245,7 +245,7 @@ func TestInduceLatency(t *testing.T) {
 // Favoriteの操作に関する詳細なテスト
 func TestPetInteractor_UpdateLikeCount_AddLike(t *testing.T) {
 	var capturedFavorite *model.Favorite
-	
+
 	mockFavoriteRepo := &MockFavoriteRepository{
 		FindByUserIdFunc: func(ctx context.Context, userId string) (map[string]model.Favorite, error) {
 			return map[string]model.Favorite{
@@ -272,7 +272,7 @@ func TestPetInteractor_UpdateLikeCount_AddLike(t *testing.T) {
 
 	// 部分的なテストのみ実施
 	_ = interactor // コンパイラの警告を回避
-	
+
 	// capturedFavoriteの検証
 	if capturedFavorite != nil && capturedFavorite.PetId != "pet123" {
 		t.Errorf("expected captured favorite PetId to be pet123")
@@ -282,7 +282,7 @@ func TestPetInteractor_UpdateLikeCount_AddLike(t *testing.T) {
 func TestPetInteractor_UpdateLikeCount_RemoveLike(t *testing.T) {
 	var deleteCalled bool
 	var capturedFavorite *model.Favorite
-	
+
 	mockFavoriteRepo := &MockFavoriteRepository{
 		FindByUserIdFunc: func(ctx context.Context, userId string) (map[string]model.Favorite, error) {
 			return map[string]model.Favorite{
@@ -311,7 +311,7 @@ func TestPetInteractor_UpdateLikeCount_RemoveLike(t *testing.T) {
 	// 部分的なテストのみ実施
 	_ = interactor // コンパイラの警告を回避
 	_ = deleteCalled
-	
+
 	// capturedFavoriteの検証
 	if capturedFavorite != nil && capturedFavorite.PetId != "pet123" {
 		t.Errorf("expected captured favorite PetId to be pet123")
@@ -371,15 +371,15 @@ func TestPetModelConversion(t *testing.T) {
 	// Petモデルの各フィールドが正しく設定されるかをテスト
 	birthDate := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	imageURL := "https://example.com/pet.jpg"
-	
+
 	pet := model.Pet{
-		ID:              "pet123",
-		Name:            "ポチ",
-		Breed:           "柴犬",
-		Gender:          "Male",
-		Price:           100000,
-		ImageURL:        &imageURL,
-		Likes:           10,
+		ID:       "pet123",
+		Name:     "ポチ",
+		Breed:    "柴犬",
+		Gender:   "Male",
+		Price:    100000,
+		ImageURL: &imageURL,
+		Likes:    10,
 		Shop: model.Shop{
 			Name:     "ペットショップA",
 			Location: "東京都",
