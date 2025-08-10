@@ -22,6 +22,8 @@ const (
 
 // configureXRay X-Rayの設定を行う
 func configureXRay(apiConfig *utils.APIConfig, logger zerolog.Logger) {
+	logger.Info().Msg(fmt.Sprintf("configureXRay start : %v", apiConfig.EnableTracing))
+
 	if !apiConfig.EnableTracing {
 		return
 	}

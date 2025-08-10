@@ -1,24 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git push:*)",
-      "Bash(mkdir:*)",
       "Bash(make:*)",
       "Bash(ls:*)",
       "Bash(go build:*)",
       "Bash(git pull:*)",
       "Bash(go fmt:*)",
       "Bash(go vet:*)",
-      "Bash(git checkout:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(gh pr create:*)",
-      "Bash(gh auth:*)",
-      "Bash(go test:*)",
-      "Bash(unset:*)",
-      "Bash(/usr/bin/make test)",
-      "Bash(/usr/bin/make test-coverage)",
-      "Bash(/usr/bin/make validate)"      
+      "Bash(go test:*)"
     ],
     "deny": []
   }
