@@ -25,6 +25,7 @@ func configureXRay(apiConfig *utils.APIConfig, logger zerolog.Logger) {
 	logger.Info().Msg(fmt.Sprintf("configureXRay start : %v", apiConfig.EnableTracing))
 
 	if !apiConfig.EnableTracing {
+		logger.Info().Msg("X-Ray is disabled")
 		return
 	}
 
