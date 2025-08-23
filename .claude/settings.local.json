@@ -7,8 +7,10 @@
       "Bash(git pull:*)",
       "Bash(go fmt:*)",
       "Bash(go vet:*)",
-      "Bash(go test:*)"
+      "Bash(go test:*)",
+      "Bash(/usr/bin/make build)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }

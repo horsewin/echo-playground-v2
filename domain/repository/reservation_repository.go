@@ -27,7 +27,11 @@ const ReservationTable = "reservations"
 func (repo *ReservationRepository) Create(ctx context.Context, input *model.Reservation) (err error) {
 	// サブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "ReservationRepository.Create")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("pet_id", input.PetId); err != nil {
@@ -66,7 +70,11 @@ func (repo *ReservationRepository) Create(ctx context.Context, input *model.Rese
 func (repo *ReservationRepository) GetCountByPetID(ctx context.Context, petID string) (count int64, err error) {
 	// サブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "ReservationRepository.GetCountByPetID")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("pet_id", petID); err != nil {

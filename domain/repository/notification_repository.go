@@ -28,7 +28,11 @@ const NotificationTable = "notifications"
 func (repo *NotificationRepository) Find(ctx context.Context, id string) (notifications model.Notifications, err error) {
 	// サブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "NotificationRepository.Find")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("id", id); err != nil {
@@ -45,7 +49,11 @@ func (repo *NotificationRepository) Find(ctx context.Context, id string) (notifi
 func (repo *NotificationRepository) FindAll(ctx context.Context) (notifications model.Notifications, err error) {
 	// サブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "NotificationRepository.FindAll")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	err = repo.SQLHandler.Scan(ctx, &notifications.Data, NotificationTable, "id desc")
 	return notifications, err
@@ -55,7 +63,11 @@ func (repo *NotificationRepository) FindAll(ctx context.Context) (notifications 
 func (repo *NotificationRepository) Count(ctx context.Context, query string, args map[string]interface{}) (data model.NotificationCount, err error) {
 	// サブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "NotificationRepository.Count")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("query", query); err != nil {
@@ -74,7 +86,11 @@ func (repo *NotificationRepository) Count(ctx context.Context, query string, arg
 func (repo *NotificationRepository) Update(ctx context.Context, in map[string]interface{}, query string, args map[string]interface{}) (err error) {
 	// サブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "NotificationRepository.Update")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("query", query); err != nil {

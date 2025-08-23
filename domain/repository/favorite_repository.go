@@ -37,7 +37,11 @@ const FavoriteTable = "favorites"
 func (f FavoriteRepository) FindByUserId(ctx context.Context, userId string) (favMap map[string]model.Favorite, err error) {
 	// サブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "FavoriteRepository.FindByUserId")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("user_id", userId); err != nil {
@@ -77,7 +81,11 @@ func (f FavoriteRepository) FindByUserId(ctx context.Context, userId string) (fa
 func (f FavoriteRepository) Create(ctx context.Context, input *model.Favorite) (err error) {
 	// サブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "FavoriteRepository.Create")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("pet_id", input.PetId); err != nil {
@@ -103,7 +111,11 @@ func (f FavoriteRepository) Create(ctx context.Context, input *model.Favorite) (
 func (f FavoriteRepository) Delete(ctx context.Context, input *model.Favorite) (err error) {
 	// サブセグメントを作成
 	_, seg := xray.BeginSubsegment(ctx, "FavoriteRepository.Delete")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("pet_id", input.PetId); err != nil {

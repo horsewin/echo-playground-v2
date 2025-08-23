@@ -24,7 +24,11 @@ type PetInteractor struct {
 func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetFilter) (pets []model.Pet, err error) {
 	// サブセグメントを作成
 	subCtx, seg := xray.BeginSubsegment(ctx, "PetInteractor.GetPets")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("filter", filter); err != nil {
@@ -91,7 +95,11 @@ func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetF
 func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *model.InputUpdateLikeRequest) (err error) {
 	// サブセグメントを作成
 	ctx, seg := xray.BeginSubsegment(ctx, "PetInteractor.UpdateLikeCount")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("input", input); err != nil {

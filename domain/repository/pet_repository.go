@@ -51,7 +51,11 @@ type PetRepository struct {
 func (repo *PetRepository) Find(ctx context.Context, filter *model.PetFilter) (pets pets, err error) {
 	// サブセグメントを作成
 	subCtx, seg := xray.BeginSubsegment(ctx, "PetRepository.Find")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// フィルタ条件をリポジトリで解釈する型に変換
 	whereClause, args := parseFilter(filter)
@@ -84,7 +88,11 @@ func (repo *PetRepository) Find(ctx context.Context, filter *model.PetFilter) (p
 func (repo *PetRepository) Update(ctx context.Context, input *model.Pet) (err error) {
 	// サブセグメントを作成
 	subCtx, seg := xray.BeginSubsegment(ctx, "PetRepository.Update")
-	defer seg.Close(err)
+	defer func() {
+		if seg != nil {
+			seg.Close(err)
+		}
+	}()
 
 	// メタデータを追加
 	if err := seg.AddMetadata("pet_id", input.ID); err != nil {
