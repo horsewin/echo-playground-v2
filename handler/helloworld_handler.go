@@ -58,6 +58,6 @@ func (handler *HelloWorldHandler) SayError() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Return a client-friendly error using echo.NewHTTPError
 		// This will be handled by our custom error handler
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request")
+		return echo.NewHTTPError(http.StatusNotImplemented, "Invalid endpoint")
 	}
 }
