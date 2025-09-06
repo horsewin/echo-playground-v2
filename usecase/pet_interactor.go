@@ -5,12 +5,14 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/domain/model/errors"
 	"github.com/horsewin/echo-playground-v2/domain/repository"
 	"github.com/horsewin/echo-playground-v2/utils"
 	"github.com/jinzhu/copier"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // PetInteractor ...
@@ -22,18 +24,21 @@ type PetInteractor struct {
 
 // GetPets ...
 func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetFilter) (pets []model.Pet, err error) {
-	// サブセグメントを作成
-	subCtx, seg := xray.BeginSubsegment(ctx, "PetInteractor.GetPets")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("pet-interactor")
+	ctx, span := tracer.Start(ctx, "PetInteractor.GetPets",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
-	// メタデータを追加
-	if err := seg.AddMetadata("filter", filter); err != nil {
-		// エラーはログに記録するだけで処理は続行
-		utils.LogError("Failed to add filter metadata: %v", err)
+	// 属性を追加
+	if filter != nil {
+		span.SetAttributes(
+			attribute.String("filter.id", filter.ID),
+			attribute.String("filter.name", filter.Name),
+			attribute.String("filter.gender", filter.Gender),
+			attribute.Float64("filter.price", filter.Price),
+		)
 	}
 
 	// 性能テスト用：3回に1回だけCPU負荷を発生させる
@@ -47,8 +52,7 @@ func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetF
 	}
 
 	// Repository層からデータを取得
-	// サブセグメントを作成
-	_app, err := interactor.PetRepository.Find(subCtx, filter)
+	_app, err := interactor.PetRepository.Find(ctx, filter)
 	if err != nil {
 		return pets, errors.NewBusinessError("10001E", err)
 	}
@@ -56,8 +60,8 @@ func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetF
 	// ドメインモデルに変換
 	for _, p := range _app.Data {
 		// 予約数を取得
-		// Note: 意図的にN+1問題を起こしている箇所。X-Rayで確認するため。
-		reservationCount, countErr := interactor.ReservationRepository.GetCountByPetID(subCtx, p.ID)
+		// Note: 意図的にN+1問題を起こしている箇所。OpenTelemetryで確認するため。
+		reservationCount, countErr := interactor.ReservationRepository.GetCountByPetID(ctx, p.ID)
 		if countErr != nil {
 			utils.LogError("Failed to get reservation count: %v", countErr)
 			// エラーが発生しても処理は継続
@@ -83,27 +87,30 @@ func (interactor *PetInteractor) GetPets(ctx context.Context, filter *model.PetF
 		})
 	}
 
-	// 結果のメタデータを追加
-	if err := seg.AddMetadata("result_count", len(pets)); err != nil {
-		utils.LogError("Failed to add result_count metadata: %v", err)
-	}
+	// 結果の属性を追加
+	span.SetAttributes(
+		attribute.Int("result_count", len(pets)),
+	)
 
 	return pets, nil
 }
 
 // UpdateLikeCount ...
 func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *model.InputUpdateLikeRequest) (err error) {
-	// サブセグメントを作成
-	ctx, seg := xray.BeginSubsegment(ctx, "PetInteractor.UpdateLikeCount")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("pet-interactor")
+	ctx, span := tracer.Start(ctx, "PetInteractor.UpdateLikeCount",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
-	// メタデータを追加
-	if err := seg.AddMetadata("input", input); err != nil {
-		utils.LogError("Failed to add input metadata: %v", err)
+	// 属性を追加
+	if input != nil {
+		span.SetAttributes(
+			attribute.String("input.pet_id", input.PetId),
+			attribute.String("input.user_id", input.UserId),
+			attribute.Bool("input.value", input.Value),
+		)
 	}
 
 	// like状態を取得
@@ -173,16 +180,22 @@ func (interactor *PetInteractor) UpdateLikeCount(ctx context.Context, input *mod
 
 // CreateReservation ...
 func (interactor *PetInteractor) CreateReservation(ctx context.Context, input *model.Reservation) (err error) {
-	// サブセグメントを作成
-	ctx, seg := xray.BeginSubsegment(ctx, "PetInteractor.CreateReservation")
-	defer seg.Close(err)
+	// スパンを作成
+	tracer := otel.Tracer("pet-interactor")
+	ctx, span := tracer.Start(ctx, "PetInteractor.CreateReservation",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
-	// メタデータを追加
-	if err := seg.AddMetadata("input", input); err != nil {
-		utils.LogError("Failed to add input metadata: %v", err)
+	// 属性を追加
+	if input != nil {
+		span.SetAttributes(
+			attribute.String("input.pet_id", input.PetId),
+			attribute.String("input.user_id", input.UserId),
+			attribute.String("input.reservation_date", input.ReservationDate),
+		)
 	}
 
-	// サブセグメントを作成
 	err = interactor.ReservationRepository.Create(ctx, input)
 	if err != nil {
 		return errors.NewBusinessError("10003E", err)

@@ -1,0 +1,36 @@
+# OpenTelemetry Collector Configuration for AWS X-Ray
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  # AWS X-Rayエクスポーター
+  awsxray:
+    region: ap-northeast-1
+
+  # デバッグ用ログエクスポーター
+  # https://github.com/open-telemetry/opentelemetry-collector/issues/11337
+  debug:
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 50
+  memory_limiter:
+    limit_mib: 512
+    check_interval: 5s
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [awsxray, debug]
+
+  telemetry:
+    logs:
+      level: info

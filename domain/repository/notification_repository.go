@@ -3,10 +3,11 @@ package repository
 import (
 	"context"
 
-	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/interface/database"
-	"github.com/horsewin/echo-playground-v2/utils"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // NotificationRepositoryInterface ...
@@ -26,84 +27,83 @@ const NotificationTable = "notifications"
 
 // Find ...
 func (repo *NotificationRepository) Find(ctx context.Context, id string) (notifications model.Notifications, err error) {
-	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "NotificationRepository.Find")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("notification-repository")
+	_, span := tracer.Start(ctx, "NotificationRepository.Find",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
-	// メタデータを追加
-	if err := seg.AddMetadata("id", id); err != nil {
-		utils.LogError("Failed to add id metadata: %v", err)
-	}
+	// 属性を追加
+	span.SetAttributes(
+		attribute.String("id", id),
+	)
 
 	whereClause := "id = :id"
 	whereArgs := map[string]interface{}{"id": id}
 	err = repo.SQLHandler.Where(ctx, &notifications.Data, NotificationTable, whereClause, whereArgs)
+	if err != nil {
+		span.RecordError(err)
+	}
 	return
 }
 
 // FindAll ...
 func (repo *NotificationRepository) FindAll(ctx context.Context) (notifications model.Notifications, err error) {
-	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "NotificationRepository.FindAll")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("notification-repository")
+	_, span := tracer.Start(ctx, "NotificationRepository.FindAll",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
 	err = repo.SQLHandler.Scan(ctx, &notifications.Data, NotificationTable, "id desc")
+	if err != nil {
+		span.RecordError(err)
+	}
 	return notifications, err
 }
 
 // Count ...
 func (repo *NotificationRepository) Count(ctx context.Context, query string, args map[string]interface{}) (data model.NotificationCount, err error) {
-	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "NotificationRepository.Count")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("notification-repository")
+	_, span := tracer.Start(ctx, "NotificationRepository.Count",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
-	// メタデータを追加
-	if err := seg.AddMetadata("query", query); err != nil {
-		utils.LogError("Failed to add query metadata: %v", err)
-	}
-	if err := seg.AddMetadata("args", args); err != nil {
-		utils.LogError("Failed to add args metadata: %v", err)
-	}
+	// 属性を追加
+	span.SetAttributes(
+		attribute.String("query", query),
+	)
 
 	var count int
 	err = repo.SQLHandler.Count(ctx, &count, NotificationTable, query, args)
+	if err != nil {
+		span.RecordError(err)
+	}
 	return model.NotificationCount{Data: count}, err
 }
 
 // Update ...
 func (repo *NotificationRepository) Update(ctx context.Context, in map[string]interface{}, query string, args map[string]interface{}) (err error) {
-	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "NotificationRepository.Update")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("notification-repository")
+	_, span := tracer.Start(ctx, "NotificationRepository.Update",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
-	// メタデータを追加
-	if err := seg.AddMetadata("query", query); err != nil {
-		utils.LogError("Failed to add query metadata: %v", err)
-	}
-	if err := seg.AddMetadata("args", args); err != nil {
-		utils.LogError("Failed to add args metadata: %v", err)
-	}
-	if err := seg.AddMetadata("input", in); err != nil {
-		utils.LogError("Failed to add input metadata: %v", err)
-	}
+	// 属性を追加
+	span.SetAttributes(
+		attribute.String("query", query),
+	)
 
 	// 新しいSQLHandlerのシグネチャに合わせて、SET用とWHERE用のパラメータを分離して渡す
 	err = repo.SQLHandler.Update(ctx, in, NotificationTable, query, args)
+	if err != nil {
+		span.RecordError(err)
+	}
 	return
 }

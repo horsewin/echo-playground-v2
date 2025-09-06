@@ -3,8 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/labstack/echo/v4"
@@ -31,21 +33,17 @@ func (handler *HelloWorldHandler) SayHelloWorld() echo.HandlerFunc {
 		ctx := c.Request().Context()
 		logger := zerolog.Ctx(ctx)
 
-		// サブセグメントを作成
-		_, seg := xray.BeginSubsegment(ctx, "SayHelloWorld")
-		if seg == nil {
-			// セグメントが作成できない場合はログに記録して処理を続行
-			logger.Warn().Msg("Failed to begin subsegment: SayHelloWorld")
-			return c.JSON(http.StatusOK, model.APIResponse{
-				Data: body,
-			})
-		}
-		defer seg.Close(nil) // エラーがない場合はnilを渡す
+		// スパンを作成
+		tracer := otel.Tracer("helloworld-handler")
+		_, span := tracer.Start(ctx, "SayHelloWorld",
+			trace.WithSpanKind(trace.SpanKindInternal),
+		)
+		defer span.End()
 
-		// Add metadata to the segment
-		if err := seg.AddMetadata("message", body.Message); err != nil {
-			logger.Error().Err(err).Msg("Failed to add message metadata")
-		}
+		// スパンに属性を追加
+		span.SetAttributes(
+			attribute.String("message", body.Message),
+		)
 
 		return c.JSON(http.StatusOK, model.APIResponse{
 			Data: body,

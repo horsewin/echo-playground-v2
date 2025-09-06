@@ -1,11 +1,10 @@
 package infrastructure
 
 import (
-	"fmt"
+	"context"
 	"os"
 	"time"
 
-	"github.com/aws/aws-xray-sdk-go/xray"
 	handlers "github.com/horsewin/echo-playground-v2/handler"
 	"github.com/horsewin/echo-playground-v2/utils"
 
@@ -13,6 +12,10 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
 	zerologlog "github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -20,26 +23,22 @@ const (
 	projectName = "echo-playground-v2"
 )
 
-// configureXRay X-Rayの設定を行う
-func configureXRay(apiConfig *utils.APIConfig, logger zerolog.Logger) {
-	logger.Info().Msg(fmt.Sprintf("configureXRay start : %v", apiConfig.EnableTracing))
+// configureOpenTelemetry OpenTelemetryの設定を行う
+func configureOpenTelemetry(apiConfig *utils.APIConfig, logger zerolog.Logger) {
+	logger.Info().Msgf("configureOpenTelemetry start : %v", apiConfig.EnableTracing)
 
-	if !apiConfig.EnableTracing {
-		logger.Info().Msg("X-Ray is disabled")
+	ctx := context.Background()
+	tp, err := SetupOpenTelemetry(ctx, projectName, "2.14.0", logger, apiConfig)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to configure OpenTelemetry")
 		return
 	}
 
-	if err := xray.Configure(xray.Config{
-		DaemonAddr:     "127.0.0.1:2000", // X-Rayデーモンのアドレス
-		ServiceVersion: "2.14.0",
-	}); err != nil {
-		logger.Error().Err(err).Msg("Failed to configure X-Ray")
-		// X-Ray設定失敗時はデフォルトの設定を使用
-		if configErr := xray.Configure(xray.Config{}); configErr != nil {
-			logger.Error().Err(configErr).Msg("Failed to configure default X-Ray settings")
-		}
+	if tp != nil {
+		logger.Info().Msg("OpenTelemetry configured successfully")
+	} else {
+		logger.Info().Msg("OpenTelemetry is disabled")
 	}
-	os.Setenv("AWS_XRAY_CONTEXT_MISSING", "LOG_ERROR")
 }
 
 // setupRequestLogger リクエストロガーミドルウェアを設定
@@ -90,8 +89,8 @@ func setupRequestLogger(logger zerolog.Logger) echo.MiddlewareFunc {
 	})
 }
 
-// setupXRayMiddleware X-Rayミドルウェアを設定
-func setupXRayMiddleware() echo.MiddlewareFunc {
+// setupOpenTelemetryMiddleware OpenTelemetryミドルウェアを設定
+func setupOpenTelemetryMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			rid := c.Response().Header().Get(echo.HeaderXRequestID)
@@ -102,47 +101,52 @@ func setupXRayMiddleware() echo.MiddlewareFunc {
 				Str("path", c.Request().URL.Path).
 				Logger()
 
-			// healthcheckはX-Rayのセグメント作成を行わない
+			// healthcheckはトレース作成を行わない
 			if c.Path() == "/healthcheck" {
 				return next(c)
 			}
 
 			req := c.Request()
 			res := c.Response()
-
-			var seg *xray.Segment
 			ctx := req.Context()
 
-			// セグメント作成を試みる
-			ctx, seg = xray.BeginSegment(ctx, projectName)
-			if seg == nil {
-				// セグメント作成に失敗した場合はエラーをログに記録し、
-				// 通常のリクエスト処理を継続
-				reqLogger.Err(fmt.Errorf("failed to create X-Ray segment"))
-				return next(c)
-			}
+			// OpenTelemetryトレーサーを取得
+			tracer := otel.Tracer(projectName)
 
-			var err error
+			// スパンを開始（サーバースパンとして）
+			ctx, span := tracer.Start(ctx, c.Request().URL.Path,
+				trace.WithSpanKind(trace.SpanKindServer),
+				trace.WithAttributes(
+					attribute.String("http.method", c.Request().Method),
+					attribute.String("http.url", c.Request().URL.String()),
+					attribute.String("http.target", c.Request().URL.Path),
+					attribute.String("http.host", c.Request().Host),
+					attribute.String("http.scheme", c.Request().URL.Scheme),
+					attribute.String("http.user_agent", c.Request().UserAgent()),
+					attribute.String("http.request_id", rid),
+				),
+			)
 			defer func() {
-				seg.Close(err)
+				defer span.End()
 			}()
 
 			// リクエストのコンテキストを更新
 			c.SetRequest(req.WithContext(reqLogger.WithContext(ctx)))
 
 			// 次のハンドラーを呼び出し
-			err = next(c)
+			err := next(c)
 
-			// レスポンスステータスをセグメントに記録
-			if addErr := seg.AddMetadata("response_status", res.Status); addErr != nil {
-				reqLogger.Err(fmt.Errorf("failed to add response_status metadata: %v", addErr))
-			}
+			// レスポンスステータスを記録
+			span.SetAttributes(
+				attribute.Int("http.status_code", res.Status),
+			)
 
-			// エラーが発生した場合、セグメントにエラー情報を記録
+			// エラーが発生した場合、スパンにエラー情報を記録
 			if err != nil {
-				if addErr := seg.AddError(err); addErr != nil {
-					reqLogger.Err(fmt.Errorf("failed to add error metadata: %v", addErr))
-				}
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
+			} else {
+				span.SetStatus(codes.Ok, "")
 			}
 
 			return err
@@ -184,8 +188,8 @@ func Router() *echo.Echo {
 	e := echo.New()
 	apiConfig := utils.NewAPIConfig()
 
-	// Configure X-Ray
-	configureXRay(apiConfig, logger)
+	// Configure OpenTelemetry
+	configureOpenTelemetry(apiConfig, logger)
 
 	// Configure Echo settings
 	e.HideBanner = true
@@ -208,8 +212,8 @@ func setupMiddlewares(e *echo.Echo, logger zerolog.Logger) {
 	// ログ出力設定
 	e.Use(setupRequestLogger(logger))
 
-	// X-Rayミドルウェア
-	e.Use(setupXRayMiddleware())
+	// OpenTelemetryミドルウェア
+	e.Use(setupOpenTelemetryMiddleware())
 
 	// recoveryミドルウェアの設定
 	e.Use(middleware.Recover())

@@ -7,6 +7,7 @@ import (
 
 // APIConfig ...
 type APIConfig struct {
+	Env         string // "development", "production"
 	HeaderValue struct {
 		ClientID string
 	}
@@ -31,11 +32,14 @@ func NewAPIConfig() *APIConfig {
 	// 環境変数[SBCNTR_ENABLE_TRACING]を見てトレースを有効にする。対応しているTracingはAWS_XRAYのみ。
 	enableKey := os.Getenv("SBCNTR_ENABLE_TRACING")
 	if strings.ToLower(enableKey) == "true" || enableKey == "1" {
-		os.Setenv("AWS_XRAY_SDK_DISABLED", "FALSE")
 		config.EnableTracing = true
 	} else {
-		os.Setenv("AWS_XRAY_SDK_DISABLED", "TRUE")
 		config.EnableTracing = false
+	}
+
+	config.Env = os.Getenv("APP_ENV")
+	if config.Env == "" {
+		config.Env = "development"
 	}
 
 	return config

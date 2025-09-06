@@ -3,10 +3,11 @@ package repository
 import (
 	"context"
 
-	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/interface/database"
-	"github.com/horsewin/echo-playground-v2/utils"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type favorite struct {
@@ -35,18 +36,17 @@ const FavoriteTable = "favorites"
 
 // FindByUserId ...
 func (f FavoriteRepository) FindByUserId(ctx context.Context, userId string) (favMap map[string]model.Favorite, err error) {
-	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "FavoriteRepository.FindByUserId")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("favorite-repository")
+	_, span := tracer.Start(ctx, "FavoriteRepository.FindByUserId",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
-	// メタデータを追加
-	if err := seg.AddMetadata("user_id", userId); err != nil {
-		utils.LogError("Failed to add user_id metadata: %v", err)
-	}
+	// 属性を追加
+	span.SetAttributes(
+		attribute.String("user_id", userId),
+	)
 
 	// inputをmapに変換
 	in := map[string]interface{}{"user_id": userId}
@@ -55,13 +55,14 @@ func (f FavoriteRepository) FindByUserId(ctx context.Context, userId string) (fa
 	var _favorites favorites
 	err = f.SQLHandler.Where(ctx, &_favorites.Data, FavoriteTable, "user_id = :user_id", in)
 	if err != nil {
+		span.RecordError(err)
 		return
 	}
 
-	// 結果のメタデータを追加
-	if err := seg.AddMetadata("result_count", len(_favorites.Data)); err != nil {
-		utils.LogError("Failed to add result_count metadata: %v", err)
-	}
+	// 結果の属性を追加
+	span.SetAttributes(
+		attribute.Int("result_count", len(_favorites.Data)),
+	)
 
 	// ドメインモデルに変換
 	favMap = make(map[string]model.Favorite)
@@ -79,24 +80,19 @@ func (f FavoriteRepository) FindByUserId(ctx context.Context, userId string) (fa
 
 // Create ...
 func (f FavoriteRepository) Create(ctx context.Context, input *model.Favorite) (err error) {
-	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "FavoriteRepository.Create")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("favorite-repository")
+	_, span := tracer.Start(ctx, "FavoriteRepository.Create",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
-	// メタデータを追加
-	if err := seg.AddMetadata("pet_id", input.PetId); err != nil {
-		utils.LogError("Failed to add pet_id metadata: %v", err)
-	}
-	if err := seg.AddMetadata("user_id", input.UserId); err != nil {
-		utils.LogError("Failed to add user_id metadata: %v", err)
-	}
-	if err := seg.AddMetadata("value", input.Value); err != nil {
-		utils.LogError("Failed to add value metadata: %v", err)
-	}
+	// 属性を追加
+	span.SetAttributes(
+		attribute.String("pet_id", input.PetId),
+		attribute.String("user_id", input.UserId),
+		attribute.Bool("value", input.Value),
+	)
 
 	// ドメインモデルをmapに変換
 	in := map[string]interface{}{"pet_id": input.PetId, "user_id": input.UserId}
@@ -104,26 +100,27 @@ func (f FavoriteRepository) Create(ctx context.Context, input *model.Favorite) (
 	// リポジトリモデルをDBに保存
 	err = f.SQLHandler.Create(ctx, in, FavoriteTable)
 
+	if err != nil {
+		span.RecordError(err)
+	}
+
 	return
 }
 
 // Delete ...
 func (f FavoriteRepository) Delete(ctx context.Context, input *model.Favorite) (err error) {
-	// サブセグメントを作成
-	_, seg := xray.BeginSubsegment(ctx, "FavoriteRepository.Delete")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("favorite-repository")
+	_, span := tracer.Start(ctx, "FavoriteRepository.Delete",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
-	// メタデータを追加
-	if err := seg.AddMetadata("pet_id", input.PetId); err != nil {
-		utils.LogError("Failed to add pet_id metadata: %v", err)
-	}
-	if err := seg.AddMetadata("user_id", input.UserId); err != nil {
-		utils.LogError("Failed to add user_id metadata: %v", err)
-	}
+	// 属性を追加
+	span.SetAttributes(
+		attribute.String("pet_id", input.PetId),
+		attribute.String("user_id", input.UserId),
+	)
 
 	// ドメインモデルをリポジトリモデルに変換
 	_favorite := favorite{
@@ -136,6 +133,10 @@ func (f FavoriteRepository) Delete(ctx context.Context, input *model.Favorite) (
 
 	// リポジトリモデルをDBから削除
 	err = f.SQLHandler.Delete(ctx, in, FavoriteTable)
+
+	if err != nil {
+		span.RecordError(err)
+	}
 
 	return
 }
