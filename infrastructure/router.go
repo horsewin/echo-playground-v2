@@ -28,7 +28,7 @@ func configureOpenTelemetry(apiConfig *utils.APIConfig, logger zerolog.Logger) {
 	logger.Info().Msgf("configureOpenTelemetry start : %v", apiConfig.EnableTracing)
 
 	ctx := context.Background()
-	tp, err := SetupOpenTelemetry(ctx, projectName, "2.14.0", apiConfig)
+	tp, err := SetupOpenTelemetry(ctx, projectName, "2.14.0", logger, apiConfig)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to configure OpenTelemetry")
 		return

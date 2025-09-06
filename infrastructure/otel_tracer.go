@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/horsewin/echo-playground-v2/utils"
+	"github.com/rs/zerolog"
 	"os"
 
 	awsxray "go.opentelemetry.io/contrib/propagators/aws/xray"
@@ -19,7 +20,7 @@ import (
 var Tracer trace.Tracer
 
 // SetupOpenTelemetry OpenTelemetryのトレーサーを設定
-func SetupOpenTelemetry(ctx context.Context, serviceName string, serviceVersion string, apiConfig *utils.APIConfig) (*sdktrace.TracerProvider, error) {
+func SetupOpenTelemetry(ctx context.Context, serviceName string, serviceVersion string, logger zerolog.Logger, apiConfig *utils.APIConfig) (*sdktrace.TracerProvider, error) {
 	if !apiConfig.EnableTracing {
 		// トレーシングが無効の場合はnoopトレーサープロバイダーを返す
 		tp := noop.NewTracerProvider()
@@ -41,9 +42,11 @@ func SetupOpenTelemetry(ctx context.Context, serviceName string, serviceVersion 
 	if apiConfig.Env == "production" {
 		// 本番環境ではHTTPSを使用
 		// WithInsecureを指定しない場合、デフォルトでHTTPSが使用される
+		logger.Info().Msg("Running in production mode: using secure OTLP exporter")
 	} else {
 		// 開発環境ではHTTPを使用
 		exporterOptions = append(exporterOptions, otlptracehttp.WithInsecure())
+		logger.Info().Msg("Running in non-production mode: using insecure OTLP exporter")
 	}
 
 	exporter, err := otlptracehttp.New(ctx, exporterOptions...)
