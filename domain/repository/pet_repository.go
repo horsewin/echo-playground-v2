@@ -5,11 +5,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/interface/database"
-	"github.com/horsewin/echo-playground-v2/utils"
 	"github.com/lib/pq"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const PetsTable = "pets"
@@ -49,36 +50,39 @@ type PetRepository struct {
 
 // Find ...
 func (repo *PetRepository) Find(ctx context.Context, filter *model.PetFilter) (pets pets, err error) {
-	// サブセグメントを作成
-	subCtx, seg := xray.BeginSubsegment(ctx, "PetRepository.Find")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("pet-repository")
+	ctx, span := tracer.Start(ctx, "PetRepository.Find",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
 	// フィルタ条件をリポジトリで解釈する型に変換
 	whereClause, args := parseFilter(filter)
 
-	// メタデータを追加
-	if err := seg.AddMetadata("filter", filter); err != nil {
-		utils.LogError("Failed to add filter metadata: %v", err)
+	// 属性を追加
+	if filter != nil {
+		span.SetAttributes(
+			attribute.String("filter.id", filter.ID),
+			attribute.String("filter.name", filter.Name),
+			attribute.String("filter.gender", filter.Gender),
+			attribute.Float64("filter.price", filter.Price),
+		)
 	}
-	if err := seg.AddMetadata("where_clause", whereClause); err != nil {
-		utils.LogError("Failed to add where_clause metadata: %v", err)
-	}
-	if err := seg.AddMetadata("args", args); err != nil {
-		utils.LogError("Failed to add args metadata: %v", err)
-	}
+	span.SetAttributes(
+		attribute.String("where_clause", strings.Join(whereClause, " and ")),
+	)
 
 	// インフラストラクチャレイヤの処理を実行
-	err = repo.SQLHandler.Where(subCtx, &pets.Data, PetsTable, strings.Join(whereClause, " and "), args)
+	err = repo.SQLHandler.Where(ctx, &pets.Data, PetsTable, strings.Join(whereClause, " and "), args)
 
-	// 結果のメタデータを追加
+	// 結果の属性を追加
 	if err == nil {
-		if err := seg.AddMetadata("result_count", len(pets.Data)); err != nil {
-			utils.LogError("Failed to add result_count metadata: %v", err)
-		}
+		span.SetAttributes(
+			attribute.Int("result_count", len(pets.Data)),
+		)
+	} else {
+		span.RecordError(err)
 	}
 
 	return
@@ -86,18 +90,17 @@ func (repo *PetRepository) Find(ctx context.Context, filter *model.PetFilter) (p
 
 // Update ...
 func (repo *PetRepository) Update(ctx context.Context, input *model.Pet) (err error) {
-	// サブセグメントを作成
-	subCtx, seg := xray.BeginSubsegment(ctx, "PetRepository.Update")
-	defer func() {
-		if seg != nil {
-			seg.Close(err)
-		}
-	}()
+	// スパンを作成
+	tracer := otel.Tracer("pet-repository")
+	ctx, span := tracer.Start(ctx, "PetRepository.Update",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+	defer span.End()
 
-	// メタデータを追加
-	if err := seg.AddMetadata("pet_id", input.ID); err != nil {
-		utils.LogError("Failed to add pet_id metadata: %v", err)
-	}
+	// 属性を追加
+	span.SetAttributes(
+		attribute.String("pet_id", input.ID),
+	)
 
 	// Petドメインモデルをリポジトリモデルに変換
 	now := time.Now()
@@ -123,7 +126,11 @@ func (repo *PetRepository) Update(ctx context.Context, input *model.Pet) (err er
 	}
 
 	// SQLHandlerを呼び出し
-	err = repo.SQLHandler.Update(subCtx, setParams, PetsTable, whereClause, whereParams)
+	err = repo.SQLHandler.Update(ctx, setParams, PetsTable, whereClause, whereParams)
+
+	if err != nil {
+		span.RecordError(err)
+	}
 
 	return
 }

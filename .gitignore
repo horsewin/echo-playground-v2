@@ -18,5 +18,5 @@
 # Avoid pushing exec binary
 main
 
-# ----- for IDE (GoLand) -----
 .idea
+/.claude/

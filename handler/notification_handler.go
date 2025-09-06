@@ -4,8 +4,10 @@ import (
 	"net/http"
 
 	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
-	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/horsewin/echo-playground-v2/domain/model"
 	"github.com/horsewin/echo-playground-v2/domain/model/errors"
 
@@ -39,33 +41,27 @@ func NewNotificationHandler(sqlHandler database.SQLHandler) *NotificationHandler
 // GetNotifications ...
 func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// サブセグメントを作成
+		// スパンを作成
 		ctx := c.Request().Context()
-		_, seg := xray.BeginSubsegment(ctx, "GetNotifications")
-		if seg == nil {
-			// セグメントが作成できない場合はログに記録して処理を続行
-			c.Logger().Warn("Failed to begin subsegment: GetNotifications")
-
-			// contextを渡す（セグメントなし）
-			resJSON, err := handler.Interactor.GetNotifications(ctx, c.QueryParam("id"))
-			if err != nil {
-				return err
-			}
-
-			return c.JSON(http.StatusOK, resJSON)
-		}
-		defer seg.Close(err)
+		tracer := otel.Tracer("notification-handler")
+		ctx, span := tracer.Start(ctx, "GetNotifications",
+			trace.WithSpanKind(trace.SpanKindInternal),
+		)
+		defer span.End()
 
 		id := c.QueryParam("id")
 
-		// Add metadata to the segment
-		if err := seg.AddMetadata("id", id); err != nil {
-			c.Logger().Errorf("Failed to add id metadata: %v", err)
+		// スパンに属性を追加
+		if id != "" {
+			span.SetAttributes(
+				attribute.String("id", id),
+			)
 		}
 
 		// contextを渡す
 		resJSON, err := handler.Interactor.GetNotifications(ctx, id)
 		if err != nil {
+			span.RecordError(err)
 			return errors.NewEchoHTTPError(ctx, err)
 		}
 
@@ -76,52 +72,33 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 // PostNotificationsRead ...
 func (handler *NotificationHandler) PostNotificationsRead() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		// サブセグメントを作成
+		// スパンを作成
 		ctx := c.Request().Context()
-		_, seg := xray.BeginSubsegment(ctx, "PostNotificationsRead")
-		if seg == nil {
-			// セグメントが作成できない場合はログに記録して処理を続行
-			logger := zerolog.Ctx(ctx)
-			logger.Warn().Msg("Failed to begin subsegment: PostNotificationsRead")
-
-			// JSONリクエストボディからnotificationIdを取得
-			var req NotificationReadRequest
-			if err := c.Bind(&req); err != nil {
-				return errors.NewEchoHTTPError(ctx, err)
-			}
-			notificationId := req.ID
-			logger.Debug().Str("notificationId", notificationId).Msg("Processing notification read request")
-
-			// contextを渡す（セグメントなし）
-			err = handler.Interactor.MarkNotificationsRead(ctx, notificationId)
-			if err != nil {
-				return errors.NewEchoHTTPError(ctx, err)
-			}
-
-			return c.JSON(http.StatusOK, model.Response{
-				Code:    http.StatusOK,
-				Message: "OK",
-			})
-		}
-		defer seg.Close(err)
+		tracer := otel.Tracer("notification-handler")
+		ctx, span := tracer.Start(ctx, "PostNotificationsRead",
+			trace.WithSpanKind(trace.SpanKindInternal),
+		)
+		defer span.End()
 
 		// JSONリクエストボディからnotificationIdを取得
 		var req NotificationReadRequest
 		if err := c.Bind(&req); err != nil {
+			span.RecordError(err)
 			return errors.NewEchoHTTPError(ctx, err)
 		}
 		notificationId := req.ID
 		logger := zerolog.Ctx(ctx)
 		logger.Debug().Str("notificationId", notificationId).Msg("Processing notification read request")
 
-		// Add metadata to the segment
-		if err := seg.AddMetadata("id", notificationId); err != nil {
-			c.Logger().Errorf("Failed to add id metadata: %v", err)
-		}
+		// スパンに属性を追加
+		span.SetAttributes(
+			attribute.String("id", notificationId),
+		)
 
 		// contextを渡す
 		err = handler.Interactor.MarkNotificationsRead(ctx, notificationId)
 		if err != nil {
+			span.RecordError(err)
 			return errors.NewEchoHTTPError(ctx, err)
 		}
 
