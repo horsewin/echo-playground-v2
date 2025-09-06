@@ -45,8 +45,6 @@ func (handler *HelloWorldHandler) SayHelloWorld() echo.HandlerFunc {
 			attribute.String("message", body.Message),
 		)
 
-		logger.Info().Msg("Handling hello world request")
-
 		return c.JSON(http.StatusOK, model.APIResponse{
 			Data: body,
 		})
