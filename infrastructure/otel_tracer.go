@@ -36,20 +36,15 @@ func SetupOpenTelemetry(ctx context.Context, serviceName string, serviceVersion 
 	}
 
 	// HTTPトレースエクスポーターを作成
-	// APP_ENV環境変数を確認して、セキュアモードを決定
 	var exporterOptions []otlptracehttp.Option
 	exporterOptions = append(exporterOptions, otlptracehttp.WithEndpoint(exporterEndpoint))
-	if apiConfig.Env == "production" {
-		// 本番環境ではHTTPSを使用
-		// WithInsecureを指定しない場合、デフォルトでHTTPSが使用される
-		logger.Info().Msg("Running in production mode: using secure OTLP exporter")
-	} else {
-		// 開発環境ではHTTPを使用
-		exporterOptions = append(exporterOptions, otlptracehttp.WithInsecure())
-		logger.Info().Msg("Running in non-production mode: using insecure OTLP exporter")
-	}
+	exporterOptions = append(exporterOptions, otlptracehttp.WithInsecure())
 
-	exporter, err := otlptracehttp.New(ctx, exporterOptions...)
+	// HTTPトレースエクスポーターを作成
+	exporter, err := otlptracehttp.New(ctx,
+		otlptracehttp.WithEndpoint(exporterEndpoint),
+		otlptracehttp.WithInsecure(), // サイドカーコンテナに向けて送出するためHTTPモードを使用
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OTLP trace exporter: %w", err)
 	}
