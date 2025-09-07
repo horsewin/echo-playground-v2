@@ -1,8 +1,6 @@
 # sbcntr-backend
 
-書籍用のバックエンドAPI用のダウンロードリポジトリです。
-
-
+書籍「AWSコンテナ設計・構築[本格]入門 第2版」のバックエンドAPI用のダウンロードリポジトリです。
 
 ## 概要
 
@@ -34,7 +32,7 @@ APIサーバーとDB(Postgres)の接続はO/Rマッパライブラリであるsq
 
 ### 事前準備
 
-- Goのバージョンは16系を利用します。
+- Goのバージョンは1.23系を利用します。
 - GOPATHの場所に応じて適切なディレクトリに、このリポジトリのコードをクローンしてください。
 - 次のコマンドを利用してモジュールをダウンロードしてください。
 
@@ -67,30 +65,30 @@ export DB_CONN=1
 ```
 
 ```bash
-❯ make all
+make all
 ```
 
 #### Dockerから動かす場合
 
 ```bash
-❯ docker build -t sbcntr-backend:latest .
-❯ docker images
+$ docker build -t sbcntr-backend:latest .
+$ docker images
 REPOSITORY                  TAG                 IMAGE ID            CREATED             SIZE
 sbcntr-backend                   latest              cdb20b70f267        58 minutes ago      4.45MB
 :
-❯ docker run -d -p 80:80 sbcntr-backend:latest
+$ docker run -d -p 80:80 sbcntr-backend:latest
 ```
 
 ### デプロイ後の疎通確認
 
 ```bash
-❯ curl http://localhost:80/v1/helloworld
+$ curl http://localhost:80/v1/helloworld
 {"data":"Hello world"}
 
-❯ curl http://localhost:80/healthcheck
+$ curl http://localhost:80/healthcheck
 null
 ```
 
 ## 注意事項
 
-- Mac OS Bigsur 11.6でのみ動作確認しています。
+- Mac OS Sequoia 15.6でのみ動作確認しています。
